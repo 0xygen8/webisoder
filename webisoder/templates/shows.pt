@@ -1,0 +1,5 @@
+<div tal:define="session request.session">
+	Logged in as ${session.get('user')}. <a href="/logout">Log out</a>
+</div>
+
+<p>${shows}</p>

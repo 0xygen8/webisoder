@@ -47,7 +47,7 @@ class User(Base):
 
 	def __set_password(self, plain):
 
-		self.salt = ''.join(SystemRandom().choice(ascii_uppercase + 
+		self.salt = ''.join(SystemRandom().choice(ascii_uppercase +
 			ascii_lowercase + digits) for _ in range(10))
 		self.passwd = sha256((self.salt + plain).encode()).hexdigest()
 
@@ -68,7 +68,13 @@ class User(Base):
 	def __get_episodes(self):
 
 		shows = [x.id for x in self.shows]
-		return DBSession.query(Episode).filter(Episode.show_id.in_(shows))
+
+		if not shows:
+			return []
+
+		matches = DBSession.query(Episode).filter(
+						Episode.show_id.in_(shows))
+		return [x for x in matches]
 
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)

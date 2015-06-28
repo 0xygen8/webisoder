@@ -1,0 +1,7 @@
+<p>${message}</p>
+
+<form method="post" action="/login">
+	<input type="text" name="user" placeholder="User name" autofocus="1" />
+	<input type="password" name="password" placeholder="Password" />
+	<input type="submit" />
+</form>
