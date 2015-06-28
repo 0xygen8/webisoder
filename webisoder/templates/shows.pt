@@ -2,4 +2,14 @@
 	Logged in as ${session.get('user')}. <a href="/logout">Log out</a>
 </div>
 
-<p>${shows}</p>
+<h3>My Shows</h3>
+
+<ul>
+	<li tal:repeat="item subscribed">${item.name}</li>
+</ul>
+
+<h3>Available Shows</h3>
+
+<ul>
+	<li tal:repeat="item sorted(list(set(shows) - set(subscribed)))">${item.name}</li>
+</ul>

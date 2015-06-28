@@ -91,6 +91,9 @@ class Show(Base):
 
 	users = relationship(User, secondary=subscriptions, backref='shows')
 
+	def __lt__(self, other):
+		return self.name.__lt__(other.name)
+
 class Episode(Base):
 
 	__tablename__ = 'episodes'

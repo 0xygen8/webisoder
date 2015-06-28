@@ -39,7 +39,7 @@ def shows(request):
 
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
-	return {'shows': user.shows}
+	return {'subscribed': user.shows, 'shows': DBSession.query(Show).all()}
 
 @view_config(route_name='subscribe', renderer='templates/shows.pt')
 @authenticated
@@ -101,6 +101,13 @@ def setup(request):
 	user = User(name='admin')
 	user.password = 'admin'
 	DBSession.add(user)
+
+	show = Show(id=1, name='show1', url='http://1')
+	DBSession.add(show)
+	user.shows.append(show)
+
+	DBSession.add(Show(id=2, name='show2', url='http://2'))
+	DBSession.add(Show(id=3, name='show3', url='http://3'))
 
 	return { 'message': 'all done' }
 
