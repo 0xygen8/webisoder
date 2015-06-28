@@ -41,7 +41,7 @@ def shows(request):
 	user = DBSession.query(User).get(uid)
 	return {'shows': user.shows}
 
-@view_config(route_name='shows', renderer='templates/shows.pt')
+@view_config(route_name='subscribe', renderer='templates/shows.pt')
 @authenticated
 def subscribe(request):
 

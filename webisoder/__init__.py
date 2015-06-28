@@ -21,6 +21,7 @@ def main(global_config, **settings):
 	config.add_route('login', '/login')
 	config.add_route('logout', '/logout')
 	config.add_route('shows', '/shows')
+	config.add_route('subscribe', '/subscribe')
 	config.add_route('setup', '/setup') # TODO remove this
 	config.scan()
 	return config.make_wsgi_app()
