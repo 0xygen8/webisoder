@@ -6,7 +6,7 @@ from pyramid import testing
 from .models import DBSession
 from .models import Base, Show, Episode, User
 
-from .views import login, logout, shows, subscribe
+from .views import login, logout, shows, subscribe, unsubscribe
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -266,7 +266,7 @@ class TestShowsView(unittest.TestCase):
 		request.session['user'] = 'testuser1'
 		res = shows(request)
 
-		result_shows = [x.id for x in res['shows']]
+		result_shows = [x.id for x in res['subscribed']]
 		self.assertIn(1, result_shows)
 		self.assertIn(2, result_shows)
 		self.assertIn(3, result_shows)
@@ -292,15 +292,45 @@ class TestShowsView(unittest.TestCase):
 		request = testing.DummyRequest(post={'show': '4'})
 		request.session['user'] = 'testuser1'
 		res = subscribe(request)
-		self.assertEqual(res.get('message'), 'successfully subscribed')
+		#self.assertEqual(res.get('message'), 'successfully subscribed')
 
 		res = shows(request)
 
-		result_shows = [x.id for x in res['shows']]
+		result_shows = [x.id for x in res['subscribed']]
 		self.assertIn(1, result_shows)
 		self.assertIn(2, result_shows)
 		self.assertIn(3, result_shows)
 		self.assertIn(4, result_shows)
+
+	def testUnsubscribeShow(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser1'
+		res = unsubscribe(request)
+		self.assertEqual(res.get('error'), 'no show specified')
+
+		request = testing.DummyRequest(post={'show': 'a'})
+		request.session['user'] = 'testuser1'
+		res = unsubscribe(request)
+		self.assertEqual(res.get('error'), 'illegal show id')
+
+		request = testing.DummyRequest(post={'show': '5'})
+		request.session['user'] = 'testuser1'
+		res = unsubscribe(request)
+		self.assertEqual(res.get('error'), 'no such show')
+
+		request = testing.DummyRequest(post={'show': '3'})
+		request.session['user'] = 'testuser1'
+		res = unsubscribe(request)
+		#self.assertEqual(res.get('message'), 'successfully unsubscribed')
+
+		res = shows(request)
+
+		result_shows = [x.id for x in res['subscribed']]
+		self.assertIn(1, result_shows)
+		self.assertIn(2, result_shows)
+		self.assertNotIn(3, result_shows)
+		self.assertNotIn(4, result_shows)
 
 class TestMyViewSuccessCondition(unittest.TestCase):
 	def setUp(self):

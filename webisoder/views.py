@@ -62,7 +62,32 @@ def subscribe(request):
 	user = DBSession.query(User).get(uid)
 	user.shows.append(show)
 
-	return { 'message': 'successfully subscribed' }
+	# TODO: flash('successfully subscribed')
+	return HTTPFound(location='/shows')
+
+@view_config(route_name='unsubscribe', renderer='templates/shows.pt')
+@authenticated
+def unsubscribe(request):
+
+	show_id = request.POST.get('show')
+
+	if not show_id:
+		return { 'error': 'no show specified' }
+
+	if not show_id.isdigit():
+		return { 'error': 'illegal show id' }
+
+	show = DBSession.query(Show).get(int(show_id))
+
+	if not show:
+		return { 'error': 'no such show' }
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+	user.shows.remove(show)
+
+	# TODO: flash('successfully unsubscribed')
+	return HTTPFound(location='/shows')
 
 @view_config(route_name='login', renderer='templates/login.pt', request_method='GET')
 def login_get(request):
