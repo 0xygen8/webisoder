@@ -92,7 +92,7 @@ def unsubscribe(request):
 
 @view_config(route_name='login', renderer='templates/login.pt', request_method='GET')
 def login_get(request):
-	return { 'message': '' }
+	return { 'user': None }
 
 @view_config(route_name='login', renderer='templates/login.pt', request_method='POST')
 def login(request):
@@ -101,19 +101,23 @@ def login(request):
 	password = request.POST.get('password')
 
 	if not name or not password:
-		return { 'message': 'login failed' }
+		request.session.flash('Login failed', 'warning')
+		return { 'user': None }
 
 	user = DBSession.query(User).get(name)
 
 	if not user:
-		return { 'message': 'login failed' }
+		request.session.flash('Login failed', 'warning')
+		return { 'user': name }
 
 	if user.authenticate(password):
 		request.session['user'] = name
-		return { 'message': 'login ok' }
-		#return HTTPFound(location='/')
+		request.session.flash('Login successful. Welcome back, %s.'
+			% str(name), 'info')
+		return HTTPFound(location='/shows') # TODO use dynamic route
 
-	return { 'message': 'login failed' }
+	request.session.flash('Login failed', 'warning')
+	return { 'user': name }
 
 @view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
 def search_post(request):
@@ -143,6 +147,7 @@ def search_post(request):
 def logout(request):
 
 	request.session.clear()
+	request.session.flash('Successfully signed out. Goodbye.', 'info')
 	return HTTPFound(location='/')
 
 @view_config(route_name='setup', renderer='templates/empty.pt', request_method='GET')

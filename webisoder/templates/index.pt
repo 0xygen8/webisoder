@@ -1,6 +1,5 @@
 <html metal:use-macro="load: base.pt">
-<body metal:fill-slot="body">
-<nav class="navbar navbar-inverse navbar-fixed-top">
+<nav class="navbar navbar-inverse navbar-fixed-top" metal:fill-slot="nav">
 	<div class="container">
 		<div class="navbar-header">
 			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -24,6 +23,18 @@
 		</div>
 	</div>
 </nav>
+
+<div metal:fill-slot="main">
+
+<div class="container">
+	<div tal:repeat="type ['success', 'info', 'warning', 'danger']">
+	<div tal:condition="request.session.peek_flash(type)" tal:omit-tag="">
+		<div tal:repeat="message request.session.pop_flash(type)" class="alert alert-${type}">
+			${message}
+		</div>
+	</div>
+	</div>
+</div>
 
 <div class="jumbotron">
 	<div class="container">
@@ -52,6 +63,5 @@
 		</div>
 	</div>
 </div>
-</body>
+</div>
 </html>
-

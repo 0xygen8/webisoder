@@ -198,12 +198,52 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			user.password = 'secret'
 			DBSession.add(user)
 
+		#while session.flash.pop_flash('):
+
 	def tearDown(self):
 
 		DBSession.remove()
 		testing.tearDown()
 
-	def testInvalidLogin(self):
+	def testInvalidUserName(self):
+
+		request = testing.DummyRequest(post={
+			'user': 'testuser2',
+			'password': 'secret'
+		})
+		res = login(request)
+		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
+
+	def testEmptyUserName(self):
+
+		request = testing.DummyRequest(post={
+			'user': '',
+			'password': 'wrong'
+		})
+		res = login(request)
+		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
+
+	def testMissingUserName(self):
+
+		request = testing.DummyRequest(post={
+			'password': 'wrong'
+		})
+		res = login(request)
+		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
+
+	def testInvalidPassword(self):
 
 		request = testing.DummyRequest(post={
 			'user': 'testuser1',
@@ -211,6 +251,35 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
+
+	def testEmptyPassword(self):
+
+		request = testing.DummyRequest(post={
+			'user': 'testuser1',
+			'password': ''
+		})
+		res = login(request)
+		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
+
+	def testMissingPassword(self):
+
+		request = testing.DummyRequest(post={
+			'user': 'testuser1'
+		})
+		res = login(request)
+		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login failed', msg[0])
 
 	def testLoginLogout(self):
 
@@ -222,8 +291,20 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		self.assertIn('user', request.session)
 		self.assertEqual('testuser1', request.session['user'])
 
+		msg = request.session.pop_flash('warning')
+		self.assertEqual(0, len(msg))
+
+		msg = request.session.pop_flash('info')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Login successful. Welcome back, testuser1.',
+								msg[0])
+
 		res = logout(request)
 		self.assertNotIn('user', request.session)
+
+		msg = request.session.pop_flash('info')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Successfully signed out. Goodbye.', msg[0])
 
 class TestShowsView(unittest.TestCase):
 

@@ -9,6 +9,19 @@
 		<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
 		<script type="text/javascript" src="/static//js/bootstrap.min.js"></script>
 	</head>
-	<body metal:define-slot="body">
+	<body>
+
+<div class="container">
+	<div tal:repeat="type ['success', 'info', 'warning', 'danger']">
+	<div tal:condition="request.session.peek_flash(type)" tal:omit-tag="">
+		<div tal:repeat="message request.session.pop_flash(type)" class="alert alert-${type}">
+			${message}
+		</div>
+	</div>
+	</div>
+</div>
+
+		<div metal:define-slot="nav" class="container"></div>
+		<div metal:define-slot="main" class="container"></div>
 	</body>
 </html>
