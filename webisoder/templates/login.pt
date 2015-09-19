@@ -8,7 +8,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="/">webisoder</a> <!-- TODO: use dynamic route -->
+			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
 		</div>
 	</div>
 </nav>
@@ -18,7 +18,8 @@
 		<h1>Login</h1>
 	</div>
 
-	<form method="post" action="/login">
+	<form method="post" action="${request.route_url('login')}">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
 			<label for="inputName">Your user name</label>
 			<input class="form-control" type="text" name="user" id="inputName" placeholder="User name" value="${user}" autofocus />

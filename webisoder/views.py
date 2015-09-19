@@ -8,12 +8,7 @@ from pyramid.view import view_config
 from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
-from .models import (
-	DBSession,
-	MyModel,
-	User,
-	Show
-)
+from .models import DBSession, User, Show
 
 @decorator
 def authenticated(func, *args, **kwargs):
@@ -23,16 +18,15 @@ def authenticated(func, *args, **kwargs):
 	if 'user' in request.session:
 		return func(*args, **kwargs)
 	else:
-		return HTTPFound(location='/login')
-
+		return HTTPFound(location=request.route_url('login'))
 
 @view_config(route_name='home', renderer='templates/index.pt')
-def my_view(request):
-    try:
-        one = DBSession.query(MyModel).filter(MyModel.name == 'one').first()
-    except DBAPIError:
-        return Response(conn_err_msg, content_type='text/plain', status_int=500)
-    return {'one': one, 'project': 'webisoder'}
+def index(request):
+
+	if 'user' in request.session:
+		return HTTPFound(location=request.route_url('shows'))
+
+	return {}
 
 @view_config(route_name='shows', renderer='templates/shows.pt')
 @authenticated
@@ -41,6 +35,12 @@ def shows(request):
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
 	return {'subscribed': user.shows, 'shows': DBSession.query(Show).all()}
+
+@view_config(route_name='episodes', renderer='templates/episodes.pt')
+@authenticated
+def episodes(request):
+
+	return {}
 
 @view_config(route_name='subscribe', renderer='templates/shows.pt')
 @authenticated
@@ -63,8 +63,9 @@ def subscribe(request):
 	user = DBSession.query(User).get(uid)
 	user.shows.append(show)
 
-	# TODO: flash('successfully subscribed')
-	return HTTPFound(location='/shows')
+	request.session.flash('Successfully subscribed to "%s"' %
+							show.name, 'info')
+	return HTTPFound(location=request.route_url('shows'))
 
 @view_config(route_name='unsubscribe', renderer='templates/shows.pt')
 @authenticated
@@ -87,14 +88,18 @@ def unsubscribe(request):
 	user = DBSession.query(User).get(uid)
 	user.shows.remove(show)
 
-	# TODO: flash('successfully unsubscribed')
-	return HTTPFound(location='/shows')
+	request.session.flash('Successfully unsubscribed from "%s"' %
+							show.name, 'info')
+	return HTTPFound(location=request.route_url('shows'))
 
-@view_config(route_name='login', renderer='templates/login.pt', request_method='GET')
+@view_config(route_name='login', renderer='templates/login.pt',
+							request_method='GET')
 def login_get(request):
+
 	return { 'user': None }
 
-@view_config(route_name='login', renderer='templates/login.pt', request_method='POST')
+@view_config(route_name='login', renderer='templates/login.pt',
+					request_method='POST', check_csrf=True)
 def login(request):
 
 	name = request.POST.get('user')
@@ -113,13 +118,14 @@ def login(request):
 	if user.authenticate(password):
 		request.session['user'] = name
 		request.session.flash('Login successful. Welcome back, %s.'
-			% str(name), 'info')
-		return HTTPFound(location='/shows') # TODO use dynamic route
+							% str(name), 'info')
+		return HTTPFound(location=request.route_url('shows'))
 
 	request.session.flash('Login failed', 'warning')
 	return { 'user': name }
 
-@view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
+@view_config(route_name='search', renderer='templates/search.pt',
+							request_method='POST')
 def search_post(request):
 
 	search = request.POST.get('search')
@@ -148,9 +154,10 @@ def logout(request):
 
 	request.session.clear()
 	request.session.flash('Successfully signed out. Goodbye.', 'info')
-	return HTTPFound(location='/')
+	return HTTPFound(location=request.route_url('home'))
 
-@view_config(route_name='setup', renderer='templates/empty.pt', request_method='GET')
+@view_config(route_name='setup', renderer='templates/empty.pt',
+							request_method='GET')
 def setup(request):
 
 	user = User(name='admin')

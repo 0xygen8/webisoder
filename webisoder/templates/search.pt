@@ -8,16 +8,16 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="/">webisoder</a> <!-- TODO: use dynamic route -->
+			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
 		</div>
 		<div class="navbar-collapse collapse">
 			<ul class="nav navbar-nav">
-				<li class="active"><a href="/shows">Shows</a></li> <!-- TODO: use dynamic route -->
-				<li><a href="/episodes">Episodes</a></li> <!-- TODO: use dynamic route -->
+				<li class="active"><a href="${request.route_url('shows')}">Shows</a></li>
+				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
 				<p class="navbar-text">Signed in as ${session.get('user')}</p>
-				<li><a href="/logout">Sign out</a></li>
+				<li><a href="${request.route_url('logout')}">Sign out</a></li>
 			</ul>
 		</div>
 	</div>
@@ -30,7 +30,7 @@
 
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<form class="form-inline" method="post" action="/search"> <!-- TODO: use dynamic route -->
+			<form class="form-inline" method="post" action="${request.route_url('search')}">
 				<div class="form-group">
 					<label class="sr-only" for="searchShow">Show name</label>
 					<div class="input-group">
@@ -67,7 +67,7 @@
 					<span tal:condition="not:show.get('overview')" class="text-muted">No description available</span>
 				</td>
 				<td>
-					<form method="post" action="/subscribe-ext">
+					<form method="post" action="/subscribe-ext"> <!-- TODO use dynamic URL -->
 						<input type="hidden" name="show" value="${show.seriesid}" />
 						<input type="submit" class="btn btn-primary btn-xs" value="Subscribe" />
 					</form>

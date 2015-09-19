@@ -2,18 +2,20 @@ import unittest
 import transaction
 
 from pyramid import testing
+from sqlalchemy import create_engine
 
 from .models import DBSession
 from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
+from .views import index
 
 class WebisoderModelTests(unittest.TestCase):
 
 	def setUp(self):
 
+		super(WebisoderModelTests, self).setUp()
 		self.config = testing.setUp()
-		from sqlalchemy import create_engine
 		engine = create_engine('sqlite://')
 		DBSession.configure(bind=engine)
 		Base.metadata.create_all(engine)
@@ -183,12 +185,11 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 
 	def setUp(self):
 
+		super(TestAuthenticationAndAuthorization, self).setUp()
 		self.config = testing.setUp()
-		#super(TestAuthenticationAndAuthorization, self).setUp()
-		#request = testing.DummyRequest(post={'foo': 1})
-		#self.config = testing.setUp(request=request)
+		self.config.add_route('shows', '__SHOWS__')
+		self.config.add_route('home', '__HOME__')
 
-		from sqlalchemy import create_engine
 		engine = create_engine('sqlite://')
 		DBSession.configure(bind=engine)
 		Base.metadata.create_all(engine)
@@ -197,8 +198,6 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			user = User(name='testuser1')
 			user.password = 'secret'
 			DBSession.add(user)
-
-		#while session.flash.pop_flash('):
 
 	def tearDown(self):
 
@@ -213,6 +212,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -226,6 +226,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -238,6 +239,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -251,6 +253,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -264,6 +267,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -276,6 +280,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
+		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(1, len(msg))
@@ -288,6 +293,10 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'password': 'secret'
 		})
 		res = login(request)
+
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
+
 		self.assertIn('user', request.session)
 		self.assertEqual('testuser1', request.session['user'])
 
@@ -298,8 +307,9 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		self.assertEqual(1, len(msg))
 		self.assertEqual('Login successful. Welcome back, testuser1.',
 								msg[0])
-
 		res = logout(request)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__HOME__'))
 		self.assertNotIn('user', request.session)
 
 		msg = request.session.pop_flash('info')
@@ -310,12 +320,10 @@ class TestShowsView(unittest.TestCase):
 
 	def setUp(self):
 
+		super(TestShowsView, self).setUp()
 		self.config = testing.setUp()
-		#super(TestAuthenticationAndAuthorization, self).setUp()
-		#request = testing.DummyRequest(post={'foo': 1})
-		#self.config = testing.setUp(request=request)
+		self.config.add_route('shows', '__SHOWS__')
 
-		from sqlalchemy import create_engine
 		engine = create_engine('sqlite://')
 		DBSession.configure(bind=engine)
 		Base.metadata.create_all(engine)
@@ -373,7 +381,12 @@ class TestShowsView(unittest.TestCase):
 		request = testing.DummyRequest(post={'show': '4'})
 		request.session['user'] = 'testuser1'
 		res = subscribe(request)
-		#self.assertEqual(res.get('message'), 'successfully subscribed')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
+
+		msg = request.session.pop_flash('info')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Successfully subscribed to "show4"', msg[0])
 
 		res = shows(request)
 
@@ -403,7 +416,12 @@ class TestShowsView(unittest.TestCase):
 		request = testing.DummyRequest(post={'show': '3'})
 		request.session['user'] = 'testuser1'
 		res = unsubscribe(request)
-		#self.assertEqual(res.get('message'), 'successfully unsubscribed')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
+
+		msg = request.session.pop_flash('info')
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Successfully unsubscribed from "show3"', msg[0])
 
 		res = shows(request)
 
@@ -438,42 +456,41 @@ class TestShowsView(unittest.TestCase):
 		res = search_post(request)
 		self.assertTrue(len(res.get('shows')) > 5)
 
-class TestMyViewSuccessCondition(unittest.TestCase):
+class TestIndexPage(unittest.TestCase):
+
 	def setUp(self):
+
+		super(TestIndexPage, self).setUp()
 		self.config = testing.setUp()
-		from sqlalchemy import create_engine
-		engine = create_engine('sqlite://')
-		from .models import (
-			Base,
-			MyModel,
-			)
-		#DBSession.configure(bind=engine)
-		Base.metadata.create_all(engine)
-		with transaction.manager:
-			model = MyModel(name='one', value=55)
-			DBSession.add(model)
+		self.config.add_route('shows', '__SHOWS__')
 
 	def tearDown(self):
-		DBSession.remove()
+
 		testing.tearDown()
 
-	def test_passing_view(self):
-		from .views import my_view
-		request = testing.DummyRequest()
-		info = my_view(request)
-		self.assertEqual(info['one'].name, 'one')
-		self.assertEqual(info['project'], 'webisoder')
+	def test_no_user(self):
 
+		request = testing.DummyRequest()
+
+		res = index(request)
+		self.assertFalse(hasattr(res, 'location'))
+
+	def test_user(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser1'
+
+		res = index(request)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 class TestMyViewFailureCondition(object):
+
 	def setUp(self):
+
+		super(TestAuthenticationAndAuthorization, self).setUp()
 		self.config = testing.setUp()
-		from sqlalchemy import create_engine
 		engine = create_engine('sqlite://')
-		from .models import (
-			Base,
-			MyModel,
-			)
 		DBSession.configure(bind=engine)
 
 	def tearDown(self):

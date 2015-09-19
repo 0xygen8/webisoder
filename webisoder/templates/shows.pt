@@ -8,16 +8,16 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="/">webisoder</a> <!-- TODO: use dynamic route -->
+			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
 		</div>
 		<div class="navbar-collapse collapse">
 			<ul class="nav navbar-nav">
-				<li class="active"><a href="/shows">Shows</a></li> <!-- TODO: use dynamic route -->
-				<li><a href="/episodes">Episodes</a></li> <!-- TODO: use dynamic route -->
+				<li class="active"><a href="${request.route_url('shows')}">Shows</a></li>
+				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
 				<p class="navbar-text">Signed in as ${session.get('user')}</p>
-				<li><a href="/logout">Sign out</a></li>
+				<li><a href="${request.route_url('logout')}">Sign out</a></li>
 			</ul>
 		</div>
 	</div>
@@ -60,7 +60,7 @@
 					<span class="text-warning">Unknown</span>
 				</td>
 				<td>
-					<form method="post" action="/unsubscribe">
+					<form method="post" action="${request.route_url('unsubscribe')}">
 						<input type="hidden" name="show" value="${show.id}" />
 						<input type="submit" class="btn btn-primary btn-xs" value="Unsubscribe" />
 					</form>
@@ -68,7 +68,7 @@
 			</tr>
 		</table>
 		<div class="panel-body">
-			<form class="form-inline" method="post" action="/search"> <!-- TODO: use dynamic route -->
+			<form class="form-inline" method="post" action="${request.route_url('search')}">
 				<div class="form-group">
 					<label class="sr-only" for="searchShow">Show name</label>
 					<div class="input-group">
@@ -93,7 +93,7 @@
 		<tr tal:repeat="item sorted(list(set(shows) - set(subscribed)))">
 			<td>${item.name}</td>
 			<td>
-				<form method="post" action="/subscribe">
+				<form method="post" action="${request.route_url('subscribe')}">
 					<input type="hidden" name="show" value="${item.id}" />
 					<input type="submit" class="btn btn-primary" value="Subscribe" />
 				</form>

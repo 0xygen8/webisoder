@@ -14,15 +14,6 @@ from zope.sqlalchemy import ZopeTransactionExtension
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-class MyModel(Base):
-
-	__tablename__ = 'models'
-	id = Column(Integer, primary_key=True)
-	name = Column(Text)
-	value = Column(Integer)
-
-Index('my_index', MyModel.name, unique=True, mysql_length=255)
-
 subscriptions = Table('subscriptions', Base.metadata,
 	Column('show_id', Integer, ForeignKey('shows.show_id')),
 	Column('user_name', Text, ForeignKey('users.user_name')))
@@ -79,6 +70,9 @@ class User(Base):
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)
 
+# TODO proper index
+#Index('user_index', User.name, unique=True, mysql_length=255)
+
 class Show(Base):
 
 	__tablename__ = 'shows'
@@ -93,6 +87,9 @@ class Show(Base):
 
 	def __lt__(self, other):
 		return self.name.__lt__(other.name)
+
+# TODO proper index
+#Index('user_index', User.name, unique=True, mysql_length=255)
 
 class Episode(Base):
 
@@ -116,3 +113,6 @@ class Episode(Base):
 		format = format.replace('##TITLE##', "%s" % self.title)
 
 		return format
+
+# TODO proper index
+#Index('user_index', User.name, unique=True, mysql_length=255)
