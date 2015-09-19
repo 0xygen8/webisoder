@@ -1,27 +1,107 @@
-<div tal:define="session request.session">
-	Logged in as ${session.get('user')}. <a href="/logout">Log out</a>
+<html metal:use-macro="load: base.pt">
+<body metal:fill-slot="body">
+<nav class="navbar navbar-inverse navbar-fixed-top">
+	<div class="container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="/">webisoder</a> <!-- TODO: use dynamic route -->
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="/shows">Shows</a></li> <!-- TODO: use dynamic route -->
+				<li><a href="/episodes">Episodes</a></li> <!-- TODO: use dynamic route -->
+			</ul>
+			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
+				<p class="navbar-text">Signed in as ${session.get('user')}</p>
+				<li><a href="/logout">Sign out</a></li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="container">
+	<div class="page-header">
+		<h1>Manage Your Shows</h1>
+	</div>
+
+	<div class="panel panel-default">
+		<div class="panel-heading">My Shows</div>
+		<div class="panel-body" tal:condition="not:subscribed">
+			<p>You are not currently subscribed to any shows.</p>
+			<p>Use the search form below to get started.</p>
+		</div>
+		<div class="panel-body" tal:condition="subscribed">
+			<p>This is a list of the shows that you are currently subscribed to. Episodes of these shows will be featured in your web feed and iCalendar.</p>
+			<p>Use the search form below to subscribe to additional shows.</p>
+		</div>
+		<table class="table table-striped" tal:condition="subscribed">
+			<thead>
+				<tr>
+					<th>Show name</th>
+					<th>Status</th>
+					<th>Next episode</th>
+					<th>Options</th>
+				</tr>
+			</thead>
+			<tr tal:repeat="show sorted(subscribed)">
+				<td>
+					<span class="glyphicon glyphicon-film" aria-hidden="true"></span>
+					${show.name}
+				</td>
+				<td>
+					<span tal:condition="show.status">${show.status}</span>
+					<span tal:condition="not:show.status" class="label label-warning">Unknown</span>
+				</td>
+				<td>
+					<span class="text-warning">Unknown</span>
+				</td>
+				<td>
+					<form method="post" action="/unsubscribe">
+						<input type="hidden" name="show" value="${show.id}" />
+						<input type="submit" class="btn btn-primary btn-xs" value="Unsubscribe" />
+					</form>
+				</td>
+			</tr>
+		</table>
+		<div class="panel-body">
+			<form class="form-inline" method="post" action="/search"> <!-- TODO: use dynamic route -->
+				<div class="form-group">
+					<label class="sr-only" for="searchShow">Show name</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="searchShow" placeholder="Search TV shows" required />
+						<span class="input-group-btn">
+							<button type="submit" class="btn btn-default">Go</button>
+						</span>
+					</div>
+				</div>
+
+			</form>
+		</div>
+	</div>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Show name</th>
+				<th>Options</th>
+			</tr>
+		</thead>
+		<tr tal:repeat="item sorted(list(set(shows) - set(subscribed)))">
+			<td>${item.name}</td>
+			<td>
+				<form method="post" action="/subscribe">
+					<input type="hidden" name="show" value="${item.id}" />
+					<input type="submit" class="btn btn-primary" value="Subscribe" />
+				</form>
+			</td>
+		</tr>
+	</table>
 </div>
 
-<h3>My Shows</h3>
-
-<ul>
-	<li tal:repeat="item sorted(subscribed)">
-		<form method="post" action="/unsubscribe">
-			<input type="hidden" name="show" value="${item.id}" />
-			${item.name}
-			<input type="submit" value="Unsubscribe" />
-		</form>
-	</li>
-</ul>
-
-<h3>Available Shows</h3>
-
-<ul>
-	<li tal:repeat="item sorted(list(set(shows) - set(subscribed)))">
-		<form method="post" action="/subscribe">
-			<input type="hidden" name="show" value="${item.id}" />
-			${item.name}
-			<input type="submit" value="Subscribe" />
-		</form>
-	</li>
-</ul>
+</body>
+</html>
