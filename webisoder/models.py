@@ -16,6 +16,7 @@
 
 from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
+from datetime import date
 
 from sqlalchemy import Table, ForeignKey, Index
 from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text
@@ -105,6 +106,23 @@ class Show(Base):
 	def __str__(self):
 
 		return "Webisoder show '%s'" % self.name
+
+	def __get_next_episode(self):
+
+		with DBSession.no_autoflush:
+			today = date.today()
+			episodes = self.episodes
+
+			for ep in episodes:
+				if not ep.airdate:
+					continue
+
+				if ep.airdate >= today:
+					return ep
+
+		return None
+
+	next_episode = property(__get_next_episode)
 
 class Episode(Base):
 

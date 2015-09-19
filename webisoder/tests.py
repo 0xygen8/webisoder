@@ -199,6 +199,27 @@ class WebisoderModelTests(unittest.TestCase):
 		fmt = '//##SHOW## : ##TITLE##'
 		self.assertEqual('//show1 : test me', ep.render(fmt))
 
+	def test_next_episode(self):
+
+		show = DBSession.query(Show).get(2)
+		today = date.today()
+
+		ep1 = Episode(show=show, num=1, season=1, title="1")
+		ep2 = Episode(show=show, num=2, season=1, title="2")
+		ep3 = Episode(show=show, num=3, season=1, title="3")
+
+		ep1.airdate = today - timedelta(1)
+		ep2.airdate = today + timedelta(1)
+		ep3.airdate = today + timedelta(2)
+
+		DBSession.add(ep1)
+		DBSession.add(ep2)
+		DBSession.add(ep3)
+
+		ep = show.next_episode
+
+		self.assertEqual(ep, ep2)
+
 class TestAuthenticationAndAuthorization(unittest.TestCase):
 
 	def setUp(self):
