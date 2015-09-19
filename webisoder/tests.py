@@ -6,7 +6,7 @@ from pyramid import testing
 from .models import DBSession
 from .models import Base, Show, Episode, User
 
-from .views import login, logout, shows, subscribe, unsubscribe
+from .views import login, logout, shows, subscribe, unsubscribe, search_post
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -331,6 +331,31 @@ class TestShowsView(unittest.TestCase):
 		self.assertIn(2, result_shows)
 		self.assertNotIn(3, result_shows)
 		self.assertNotIn(4, result_shows)
+
+	def test_search(self):
+
+		request = testing.DummyRequest(post={'bla': 'big bang'})
+		request.session['user'] = 'testuser1'
+		res = search_post(request)
+		self.assertEqual(res.get('error'), 'search term missing')
+
+		request = testing.DummyRequest(post={'search': 'big bang theory'})
+		request.session['user'] = 'testuser1'
+		res = search_post(request)
+		self.assertEqual(len(res.get('shows')), 1)
+		self.assertEqual(res.get('search'), 'big bang theory')
+		show = res.get('shows')[0]
+		self.assertEqual(show.get('id'), 80379)
+
+		request = testing.DummyRequest(post={'search': 'this does not exist'})
+		request.session['user'] = 'testuser1'
+		res = search_post(request)
+		self.assertEqual(len(res.get('shows')), 0)
+
+		request = testing.DummyRequest(post={'search': 'doctor who'})
+		request.session['user'] = 'testuser1'
+		res = search_post(request)
+		self.assertTrue(len(res.get('shows')) > 5)
 
 class TestMyViewSuccessCondition(unittest.TestCase):
 	def setUp(self):

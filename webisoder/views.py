@@ -6,6 +6,7 @@ from pyramid.security import remember, forget
 from pyramid.view import view_config
 
 from sqlalchemy.exc import DBAPIError
+from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import (
 	DBSession,
@@ -113,6 +114,30 @@ def login(request):
 		#return HTTPFound(location='/')
 
 	return { 'message': 'login failed' }
+
+@view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
+def search_post(request):
+
+	search = request.POST.get('search')
+
+	if not search:
+		return { 'error': 'search term missing' }
+
+	result = []
+
+	class TVDBSearch(BaseUI):
+		def selectSeries(self, allSeries):
+			result.extend(allSeries)
+			return BaseUI.selectSeries(self, allSeries)
+
+	tv = Tvdb(custom_ui=TVDBSearch)
+
+	try:
+		tv[search]
+	except tvdb_shownotfound:
+		return { 'shows': [], 'search': search }
+
+	return { 'shows': result, 'search': search }
 
 @view_config(route_name='logout', request_method='GET')
 def logout(request):

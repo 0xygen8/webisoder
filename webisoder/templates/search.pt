@@ -1,0 +1,81 @@
+<html metal:use-macro="load: base.pt">
+<body metal:fill-slot="body">
+<nav class="navbar navbar-inverse navbar-fixed-top">
+	<div class="container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="/">webisoder</a> <!-- TODO: use dynamic route -->
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="/shows">Shows</a></li> <!-- TODO: use dynamic route -->
+				<li><a href="/episodes">Episodes</a></li> <!-- TODO: use dynamic route -->
+			</ul>
+			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
+				<p class="navbar-text">Signed in as ${session.get('user')}</p>
+				<li><a href="/logout">Sign out</a></li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div class="container">
+	<div class="page-header">
+		<h1>Search results</h1>
+	</div>
+
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<form class="form-inline" method="post" action="/search"> <!-- TODO: use dynamic route -->
+				<div class="form-group">
+					<label class="sr-only" for="searchShow">Show name</label>
+					<div class="input-group">
+						<input type="text" name="search" class="form-control" id="searchShow" placeholder="Search TV shows" required autofocus value="${search}" />
+						<span class="input-group-btn">
+							<button type="submit" class="btn btn-default">Search</button>
+						</span>
+					</div>
+				</div>
+
+			</form>
+		</div>
+		<div class="panel-body" tal:condition="not:shows">Nothing found, sorry.</div>
+		<table class="table table-striped" tal:condition="shows">
+			<thead>
+				<tr>
+					<th>Show name</th>
+					<th>First aired</th>
+					<th>Description</th>
+					<th>Options</th>
+				</tr>
+			</thead>
+			<tr tal:repeat="show sorted(shows)">
+				<td>
+					<span class="glyphicon glyphicon-film" aria-hidden="true"></span>
+					<a href="http://thetvdb.com/?tab=series&id=${show.seriesid}">${show.seriesname}</a>
+				</td>
+				<td>
+					<span tal:condition="show.get('firstaired')">${show.firstaired}</span>
+					<span tal:condition="not:show.get('firstaired')" class="text-muted">Unknown</span>
+				</td>
+				<td>
+					<span tal:condition="show.get('overview')">${show.overview}</span>
+					<span tal:condition="not:show.get('overview')" class="text-muted">No description available</span>
+				</td>
+				<td>
+					<form method="post" action="/subscribe-ext">
+						<input type="hidden" name="show" value="${show.seriesid}" />
+						<input type="submit" class="btn btn-primary btn-xs" value="Subscribe" />
+					</form>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
+</body>
+</html>
