@@ -86,9 +86,6 @@ class User(Base):
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)
 
-# TODO proper index
-#Index('user_index', User.name, unique=True, mysql_length=255)
-
 class Show(Base):
 
 	__tablename__ = 'shows'
@@ -103,9 +100,6 @@ class Show(Base):
 
 	def __lt__(self, other):
 		return self.name.__lt__(other.name)
-
-# TODO proper index
-#Index('user_index', User.name, unique=True, mysql_length=255)
 
 class Episode(Base):
 
@@ -130,5 +124,5 @@ class Episode(Base):
 
 		return format
 
-# TODO proper index
-#Index('user_index', User.name, unique=True, mysql_length=255)
+Index('user_index', User.name, unique=True)
+Index('show_id', Show.id, unique=True)
