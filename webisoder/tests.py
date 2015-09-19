@@ -17,6 +17,8 @@
 import unittest
 import transaction
 
+from datetime import date, timedelta
+
 from pyramid import testing
 from sqlalchemy import create_engine
 
@@ -24,7 +26,7 @@ from .models import DBSession
 from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
-from .views import index
+from .views import index, episodes
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -348,6 +350,7 @@ class TestShowsView(unittest.TestCase):
 
 			user = User(name='testuser1')
 			user.password = 'secret'
+			user.days_back = 0
 			DBSession.add(user)
 
 			self.show1 = Show(id=1, name='show1', url='http://1')
@@ -358,6 +361,27 @@ class TestShowsView(unittest.TestCase):
 			user.shows.append(self.show1)
 			user.shows.append(self.show2)
 			user.shows.append(self.show3)
+
+			today = date.today()
+
+			ep1 = Episode(show=self.show2, num=1, season=1, title='ep1')
+			ep2 = Episode(show=self.show2, num=2, season=1, title='ep2')
+			ep3 = Episode(show=self.show1, num=1, season=1, title='ep3')
+			ep4 = Episode(show=self.show1, num=2, season=1, title='ep4')
+			ep5 = Episode(show=self.show1, num=3, season=1, title='ep5')
+
+			ep1.airdate = today - timedelta(7)
+			ep2.airdate = today + timedelta(7)
+			ep3.airdate = today - timedelta(7)
+			ep4.airdate = today - timedelta(2)
+			ep5.airdate = today
+
+			DBSession.add(ep1)
+			DBSession.add(ep2)
+			DBSession.add(ep3)
+			DBSession.add(ep4)
+			DBSession.add(ep5)
+
 			DBSession.add(self.show4)
 
 	def tearDown(self):
@@ -471,6 +495,37 @@ class TestShowsView(unittest.TestCase):
 		request.session['user'] = 'testuser1'
 		res = search_post(request)
 		self.assertTrue(len(res.get('shows')) > 5)
+
+	def test_episodes(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser1'
+		res = episodes(request)
+
+		ep = res.get('episodes', [])
+		self.assertEqual(2, len(ep))
+
+		self.assertEqual('ep5', ep[0].title)
+		self.assertEqual('ep2', ep[1].title)
+
+		# 1 day back
+		user = DBSession.query(User).get('testuser1')
+		user.days_back = 1
+		res = episodes(request)
+
+		ep = res.get('episodes', [])
+		self.assertEqual(2, len(ep))
+
+		# 2 days back
+		user = DBSession.query(User).get('testuser1')
+		user.days_back = 2
+		res = episodes(request)
+		ep = res.get('episodes', [])
+		self.assertEqual(3, len(ep))
+
+		self.assertEqual('ep4', ep[0].title)
+		self.assertEqual('ep5', ep[1].title)
+		self.assertEqual('ep2', ep[2].title)
 
 class TestIndexPage(unittest.TestCase):
 

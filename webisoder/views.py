@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from decorator import decorator
+from datetime import date, timedelta
 
 from pyramid.httpexceptions import HTTPFound
 from pyramid.response import Response
@@ -56,7 +57,13 @@ def shows(request):
 @authenticated
 def episodes(request):
 
-	return {}
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	then = date.today() - timedelta(user.days_back or 0)
+	episodes = [e for e in user.episodes if e.airdate >= then]
+
+	return { 'episodes': episodes }
 
 @view_config(route_name='subscribe', renderer='templates/shows.pt')
 @authenticated
@@ -172,6 +179,7 @@ def logout(request):
 	request.session.flash('Successfully signed out. Goodbye.', 'info')
 	return HTTPFound(location=request.route_url('home'))
 
+# TODO remove this
 @view_config(route_name='setup', renderer='templates/empty.pt',
 							request_method='GET')
 def setup(request):

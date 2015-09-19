@@ -6,7 +6,19 @@
 </ul>
 
 <div metal:fill-slot="main" class="container">
-	<div class="well">TODO</div>
+	<div class="page-header">
+		<h1>Your Episodes <small>upcoming and recent</small></h1>
+	</div>
+
+	<p>Your list of episodes is also available as a <a href="#TODO">web feed</a> and as an <a href="#TODO">iCalendar</a>.</p>
+
+	<div class="list-group" tal:define="global prevdate 0">
+		<div tal:repeat="episode episodes" tal:omit-tag="">
+			<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
+			<li class="list-group-item">${episode}</li>
+			<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
+		</div>
+	</div>
 </div>
 
 </html>

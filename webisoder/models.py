@@ -99,7 +99,12 @@ class Show(Base):
 	users = relationship(User, secondary=subscriptions, backref='shows')
 
 	def __lt__(self, other):
+
 		return self.name.__lt__(other.name)
+
+	def __str__(self):
+
+		return "Webisoder show '%s'" % self.name
 
 class Episode(Base):
 
@@ -123,6 +128,11 @@ class Episode(Base):
 		format = format.replace('##TITLE##', "%s" % self.title)
 
 		return format
+
+	def __str__(self):
+
+		return '%s S%02dE%02d: %s' % (self.show.name,
+					self.season, self.num, self.title)
 
 Index('user_index', User.name, unique=True)
 Index('show_id', Show.id, unique=True)
