@@ -1,4 +1,5 @@
 <html metal:use-macro="load: base.pt">
+
 <nav class="navbar navbar-inverse navbar-fixed-top" metal:fill-slot="nav">
 	<div class="container">
 		<div class="navbar-header">
@@ -49,20 +50,26 @@
 	<div class="row">
 		<div class="col-md-4">
 			<h2>Feed</h2>
-			<p>Webisoder makes your TV schedule available as a <a href="http://en.wikipedia.org/wiki/Web_feed">web feed</a> for your favourite <a href="https://en.wikipedia.org/wiki/Feed_aggregator">feed reader</a> as well as an <a href="https://en.wikipedia.org/wiki/ICalendar">iCalendar</a> that can be imported in any modern calendar application.</p>
-<!--			<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>-->
+			<p>Webisoder makes your TV schedule available as a <a href="http://en.wikipedia.org/wiki/Web_feed">web feed</a> for your favourite <a href="https://en.wikipedia.org/wiki/Feed_aggregator">feed reader</a> as well as an <a href="https://en.wikipedia.org/wiki/ICalendar">iCalendar</a> to be used in any modern calendar application.</p>
+			<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p> <!-- TODO -->
 		</div>
 		<div class="col-md-4">
 			<h2>TV data</h2>
-			<p>Webisoder uses data from the TV database blabla.</p>
-<!--			<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>-->
+			<p>Webisoder uses data from <a href="http://thetvdb.com/">TheTVDB.com</a>. If you find this site useful at all please consider <a href="http://thetvdb.com/donate/">donating to TheTVDB</a> to show your support.</p>
+			<p><a class="btn btn-default" href="http://thetvdb.com/donate/" role="button">Support TheTVDB &raquo;</a></p>
 		</div>
 		<div class="col-md-4">
 			<h2>Free software</h2>
-			<p>Webisoder is <a href="https://en.wikipedia.org/wiki/Free_software">free software</a> available under the terms of the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License</a>.</p>
-			<p><a class="btn btn-default" href="https://github.com/cockroach" role="button">View details &raquo;</a></p>
+			<p>Webisoder is <a href="https://en.wikipedia.org/wiki/Free_software">free software</a> available under the terms of the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License</a>. Free software helps you protect your <a href="https://www.fsf.org/campaigns/surveillance">freedom and privacy</a>.</p>
+			<p><a class="btn btn-default" href="https://github.com/cockroach" role="button">View project details &raquo;</a></p>
 		</div>
 	</div>
 </div>
+
+<nav class="navbar navbar-default navbar-fixed-bottom">
+	<div class="container">
+		<p class="navbar-text"><small>Copyright &copy; 2006 &ndash; 2015  <a href="http://www.ott.net/">Stefan Ott</a>. All Rights Reserved.</small></p>
+	</div>
+<nav>
 </div>
 </html>
