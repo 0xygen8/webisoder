@@ -18,7 +18,6 @@ import unittest
 import transaction
 
 from datetime import date, timedelta
-
 from pyramid import testing
 from sqlalchemy import create_engine
 
@@ -26,7 +25,8 @@ from .models import DBSession
 from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
-from .views import index, episodes
+from .views import index, episodes, profile_get, profile_post, password_post
+from .views import reset_token_post
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -58,6 +58,20 @@ class WebisoderModelTests(unittest.TestCase):
 
 		DBSession.remove()
 		testing.tearDown()
+
+	def test_user_token(self):
+
+		user1 = DBSession.query(User).get('user1')
+		user1.token = 'token'
+
+		user1.reset_token()
+		token = user1.token
+		self.assertNotEqual(token, 'token')
+		self.assertEqual(12, len(token))
+
+		user1.reset_token()
+		self.assertNotEqual(token, user1.token)
+		self.assertEqual(12, len(token))
 
 	def test_show_episode_relation(self):
 
@@ -216,7 +230,8 @@ class WebisoderModelTests(unittest.TestCase):
 		DBSession.add(ep2)
 		DBSession.add(ep3)
 
-		ep = show.next_episode
+		with DBSession.no_autoflush:
+			ep = show.next_episode
 
 		self.assertEqual(ep, ep2)
 
@@ -234,11 +249,15 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		Base.metadata.create_all(engine)
 
 		with transaction.manager:
-			user = User(name='testuser1')
+
+			user = User(name='testuser100')
 			user.password = 'secret'
 			DBSession.add(user)
 
 	def tearDown(self):
+
+		user = DBSession.query(User).get('testuser100')
+		DBSession.delete(user)
 
 		DBSession.remove()
 		testing.tearDown()
@@ -287,7 +306,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 	def testInvalidPassword(self):
 
 		request = testing.DummyRequest(post={
-			'user': 'testuser1',
+			'user': 'testuser100',
 			'password': 'wrong'
 		})
 		res = login(request)
@@ -301,7 +320,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 	def testEmptyPassword(self):
 
 		request = testing.DummyRequest(post={
-			'user': 'testuser1',
+			'user': 'testuser100',
 			'password': ''
 		})
 		res = login(request)
@@ -315,7 +334,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 	def testMissingPassword(self):
 
 		request = testing.DummyRequest(post={
-			'user': 'testuser1'
+			'user': 'testuser100'
 		})
 		res = login(request)
 		self.assertNotIn('user', request.session)
@@ -328,7 +347,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 	def testLoginLogout(self):
 
 		request = testing.DummyRequest(post={
-			'user': 'testuser1',
+			'user': 'testuser100',
 			'password': 'secret'
 		})
 		res = login(request)
@@ -337,15 +356,14 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		self.assertIn('user', request.session)
-		self.assertEqual('testuser1', request.session['user'])
+		self.assertEqual('testuser100', request.session['user'])
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(0, len(msg))
 
 		msg = request.session.pop_flash('info')
-		self.assertEqual(1, len(msg))
-		self.assertEqual('Login successful. Welcome back, testuser1.',
-								msg[0])
+		self.assertEqual(0, len(msg))
+
 		res = logout(request)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__HOME__'))
@@ -547,6 +565,497 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual('ep4', ep[0].title)
 		self.assertEqual('ep5', ep[1].title)
 		self.assertEqual('ep2', ep[2].title)
+
+class TestProfileView(unittest.TestCase):
+
+	def setUp(self):
+
+		super(TestProfileView, self).setUp()
+		self.config = testing.setUp()
+		self.config.add_route('profile', '__PROFILE__')
+
+		with transaction.manager:
+
+			user = User(name='testuser11')
+			user.password = 'secret'
+			DBSession.add(user)
+
+			user = User(name='testuser12')
+			user.password = 'secret'
+			DBSession.add(user)
+
+	def tearDown(self):
+
+		with transaction.manager:
+
+			user = DBSession.query(User).get('testuser11')
+			DBSession.delete(user)
+
+			user = DBSession.query(User).get('testuser12')
+			DBSession.delete(user)
+
+		DBSession.remove()
+		testing.tearDown()
+
+	def testGetProfile(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser12'
+		res = profile_get(request)
+
+		self.assertIn('user', res)
+		user = res.get('user')
+		self.assertEquals(user.name, 'testuser12')
+
+	def testUpdateEmail(self):
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('testuser@example.com', user.mail)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': '',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('testuser@example.com', user.mail)
+		self.assertIn('form_errors', res)
+		self.assertIn('email', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'notaproperaddress',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('testuser@example.com', user.mail)
+		self.assertIn('form_errors', res)
+		self.assertIn('email', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('testuser@example.com', user.mail)
+		self.assertIn('form_errors', res)
+		self.assertIn('email', res.get('form_errors', {}))
+
+	def testUpdateLinkFormat(self):
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'http://www.example.com/',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('http://www.example.com/', user.link_format)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'asdfg',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('http://www.example.com/', user.link_format)
+		self.assertIn('form_errors', res)
+		self.assertIn('link_format', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': '',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('http://www.example.com/', user.link_format)
+		self.assertIn('form_errors', res)
+		self.assertIn('link_format', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('http://www.example.com/', user.link_format)
+		self.assertIn('form_errors', res)
+		self.assertIn('link_format', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'https://www.example.com/',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertEqual('https://www.example.com/', user.link_format)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+	def testUpdateSiteNews(self):
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'site_news': 'on',
+			'days_back': '6',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(user.site_news)
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '6',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertFalse(user.site_news)
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'site_news': 'on',
+			'days_back': '6',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(user.site_news)
+
+	def testUpdateMaxAge(self):
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '6',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(6, user.days_back)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '7',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '8',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertIn('form_errors', res)
+		self.assertIn('days_back', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '-1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertIn('form_errors', res)
+		self.assertIn('days_back', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertIn('form_errors', res)
+		self.assertIn('days_back', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': 'nothing',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertIn('form_errors', res)
+		self.assertIn('days_back', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(7, user.days_back)
+		self.assertIn('form_errors', res)
+		self.assertIn('days_back', res.get('form_errors', {}))
+
+	def testUpdateOffset(self):
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '0'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(0, user.date_offset)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '-1'
+		})
+		request = testing.DummyRequest({'date_offset': '0'})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(0, user.date_offset)
+		self.assertIn('form_errors', res)
+		self.assertNotIn('date_offset', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '1'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(1, user.date_offset)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '2'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(2, user.date_offset)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': '3'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(2, user.date_offset)
+		self.assertIn('form_errors', res)
+		self.assertIn('date_offset', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1',
+			'date_offset': 'A'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(2, user.date_offset)
+		self.assertIn('form_errors', res)
+		self.assertIn('date_offset', res.get('form_errors', {}))
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'link_format': 'ignore',
+			'days_back': '1'
+		})
+		request.session['user'] = 'testuser12'
+		res = profile_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertEqual(2, user.date_offset)
+		self.assertIn('form_errors', res)
+		self.assertIn('date_offset', res.get('form_errors', {}))
+
+	def testUpdatePassword(self):
+
+		request = testing.DummyRequest({
+			'new': 'asdf',
+			'verify': 'asdf'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('current', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'asdf',
+			'verify': 'asdf'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('new', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'asdf',
+			'new': 'asdf'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('verify', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'asdf',
+			'new': 'asdfgh',
+			'verify': 'asdfgh'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('current', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'secret',
+			'new': 'asdfg',
+			'verify': 'asdfg'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('new', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'secret',
+			'new': 'asdfgh',
+			'verify': 'asdfghi'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		self.assertIn('verify', res.get('form_errors', {}))
+		self.assertTrue(user.authenticate('secret'))
+
+		request = testing.DummyRequest({
+			'current': 'secret',
+			'new': 'asdfgh',
+			'verify': 'asdfgh'
+		})
+		request.session['user'] = 'testuser12'
+		res = password_post(request)
+		user = DBSession.query(User).get('testuser12')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+
+	def testResetToken(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser12'
+
+		user = DBSession.query(User).get('testuser12')
+		token = user.token
+
+		res = reset_token_post(request)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+		user = DBSession.query(User).get('testuser12')
+		self.assertNotEqual(token, user.token)
+		token = user.token
+
+		res = reset_token_post(request)
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__PROFILE__'))
+		user = DBSession.query(User).get('testuser12')
+		self.assertNotEqual(token, user.token)
 
 class TestIndexPage(unittest.TestCase):
 

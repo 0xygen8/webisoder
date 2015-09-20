@@ -19,6 +19,8 @@ requires = [
     'zope.sqlalchemy',
     'waitress',
     'decorator',
+    'colander',
+    'deform'
     ]
 
 setup(name='webisoder',

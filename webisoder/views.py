@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from decorator import decorator
+from deform import Form, ValidationFailure
 from datetime import date, timedelta
 
 from pyramid.httpexceptions import HTTPFound
@@ -26,6 +27,7 @@ from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
+from .forms import ProfileForm, PasswordForm
 
 @decorator
 def authenticated(func, *args, **kwargs):
@@ -82,12 +84,12 @@ def subscribe(request):
 	if not show:
 		return { 'error': 'no such show' }
 
-	uid = request.session.get('user')
+	session = request.session
+	uid = session.get('user')
 	user = DBSession.query(User).get(uid)
 	user.shows.append(show)
 
-	request.session.flash('Successfully subscribed to "%s"' %
-							show.name, 'info')
+	session.flash('Successfully subscribed to "%s"' % show.name, 'info')
 	return HTTPFound(location=request.route_url('shows'))
 
 @view_config(route_name='unsubscribe', renderer='templates/shows.pt')
@@ -107,12 +109,12 @@ def unsubscribe(request):
 	if not show:
 		return { 'error': 'no such show' }
 
-	uid = request.session.get('user')
+	session = request.session
+	uid = session.get('user')
 	user = DBSession.query(User).get(uid)
 	user.shows.remove(show)
 
-	request.session.flash('Successfully unsubscribed from "%s"' %
-							show.name, 'info')
+	session.flash('Successfully unsubscribed from "%s"' % show.name, 'info')
 	return HTTPFound(location=request.route_url('shows'))
 
 @view_config(route_name='login', renderer='templates/login.pt',
@@ -140,8 +142,6 @@ def login(request):
 
 	if user.authenticate(password):
 		request.session['user'] = name
-		request.session.flash('Login successful. Welcome back, %s.'
-							% str(name), 'info')
 		return HTTPFound(location=request.route_url('shows'))
 
 	request.session.flash('Login failed', 'warning')
@@ -149,6 +149,7 @@ def login(request):
 
 @view_config(route_name='search', renderer='templates/search.pt',
 							request_method='POST')
+@authenticated
 def search_post(request):
 
 	search = request.POST.get('search')
@@ -173,11 +174,94 @@ def search_post(request):
 	return { 'shows': result, 'search': search }
 
 @view_config(route_name='logout', request_method='GET')
+@authenticated
 def logout(request):
 
 	request.session.clear()
 	request.session.flash('Successfully signed out. Goodbye.', 'info')
 	return HTTPFound(location=request.route_url('home'))
+
+@view_config(route_name='profile', renderer='templates/profile.pt',
+							request_method='GET')
+@authenticated
+def profile_get(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	return { 'user': user, 'form_errors': {} }
+
+@view_config(route_name='profile', renderer='templates/profile.pt',
+							request_method='POST')
+@authenticated
+def profile_post(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	controls = request.POST.items()
+	form = Form(ProfileForm())
+
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		request.session.flash('Failed to update profile', 'danger')
+		return { 'user': user, 'form_errors': e.error.asdict() }
+
+	user.mail = data.get('email', user.mail)
+	user.days_back = data.get('days_back', user.days_back)
+	user.date_offset = data.get('date_offset', user.date_offset)
+	user.link_format = data.get('link_format', user.link_format)
+	user.site_news = data.get('site_news', user.site_news)
+
+	request.session.flash('Your settings have been updated', 'info')
+	return HTTPFound(location=request.route_url('profile'))
+
+@view_config(route_name='reset_token', renderer='templates/profile.pt',
+							request_method='POST')
+@authenticated
+def reset_token_post(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+	user.reset_token()
+
+	request.session.flash('Your token has been reset', 'info')
+	return HTTPFound(location=request.route_url('profile'))
+
+@view_config(route_name='password', renderer='templates/profile.pt',
+							request_method='POST')
+@authenticated
+def password_post(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	controls = request.POST.items()
+	form = Form(PasswordForm())
+
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		request.session.flash('Password change failed', 'danger')
+		return { 'user': user, 'form_errors': e.error.asdict() }
+
+	if not user.authenticate(data.get('current')):
+
+		request.session.flash('Password change failed', 'danger')
+		msg = 'Wrong password'
+		return { 'user': user, 'form_errors': { 'current': msg } }
+
+	if not data.get('verify') == data.get('new'):
+
+		request.session.flash('Password change failed', 'danger')
+		msg = 'Passwords to not match'
+		return { 'user': user, 'form_errors': { 'verify': msg } }
+
+	user.password = data.get('new')
+
+	request.session.flash('Your password has been changed', 'info')
+	return HTTPFound(location=request.route_url('profile'))
 
 # TODO remove this
 @view_config(route_name='setup', renderer='templates/empty.pt',

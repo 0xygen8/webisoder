@@ -16,7 +16,7 @@
 				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
-				<p class="navbar-text">Signed in as ${session.get('user')}</p>
+				<p class="navbar-text">Signed in as <a href="${request.route_url('profile')}">${session.get('user')}</a></p>
 				<li><a href="${request.route_url('logout')}">Sign out</a></li>
 			</ul>
 		</div>

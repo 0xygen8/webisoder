@@ -8,3 +8,8 @@ th
 {
 	white-space: nowrap;
 }
+
+#linkPreview
+{
+	display: none;
+}

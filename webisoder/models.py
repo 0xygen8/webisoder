@@ -73,6 +73,11 @@ class User(Base):
 
 		return False
 
+	def reset_token(self):
+
+		self.token = ''.join(SystemRandom().choice(ascii_uppercase +
+			ascii_lowercase + digits) for _ in range(12))
+
 	def __get_episodes(self):
 
 		shows = [x.id for x in self.shows]
@@ -109,16 +114,15 @@ class Show(Base):
 
 	def __get_next_episode(self):
 
-		with DBSession.no_autoflush:
-			today = date.today()
-			episodes = self.episodes
+		today = date.today()
+		episodes = self.episodes
 
-			for ep in episodes:
-				if not ep.airdate:
-					continue
+		for ep in episodes:
+			if not ep.airdate:
+				continue
 
-				if ep.airdate >= today:
-					return ep
+			if ep.airdate >= today:
+				return ep
 
 		return None
 
