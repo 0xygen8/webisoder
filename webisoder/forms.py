@@ -43,10 +43,13 @@ class Boolean(object):
 class ProfileForm(MappingSchema):
 
 	email = SchemaNode(String(), validator=Email())
+	site_news = SchemaNode(Boolean())
+
+class FeedSettingsForm(MappingSchema):
+
 	days_back = SchemaNode(Integer(), validator=Range(1, 7))
 	date_offset = SchemaNode(Integer(), validator=Range(0, 2))
 	link_format = SchemaNode(String(), validator=Length(min=6))
-	site_news = SchemaNode(Boolean())
 
 class PasswordForm(MappingSchema):
 

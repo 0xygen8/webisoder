@@ -1,0 +1,91 @@
+<html metal:use-macro="load: base_auth.pt">
+
+<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile.js')}"></script>
+
+<div metal:fill-slot="main" class="container">
+	<div class="page-header">
+		<h1>User profile for ${user.name}</h1>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-2">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Personal settings</strong></div>
+				<div class="list-group">
+					<a class="list-group-item" href="${request.route_url('profile')}">General settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_pw')}">Account settings</a>
+					<a class="list-group-item active" href="${request.route_url('settings_feed')}">Feed settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-10">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Feed settings</strong></div>
+				<div class="panel-body">
+					<form method="post" action="${request.route_url('settings_feed')}">
+						<div class="form-group">
+							<label for="inputDays">Maximum age</label>
+							<div tal:attributes="class 'input-group has-error' if form_errors.get('days_back') else 'input-group'">
+								<select class="form-control" name="days_back" id="inputDays">
+									<option tal:repeat="value range(1,8)" tal:attributes="selected user.days_back == value">${value}</option>
+								</select>
+								<div class="input-group-addon">days</div>
+								<div tal:condition="form_errors.get('days_back')" class="input-group-addon">${form_errors.get('days_back')}</div>
+							</div>
+							<p class="help-block">
+								Episodes which have first been aired more than the number of days specified here in the past will be hidden.
+							</p>
+						</div>
+						<div class="form-group">
+						<label for="inputOffset">Date offset</label>
+							<div tal:attributes="class 'input-group has-error' if form_errors.get('date_offset') else 'input-group'">
+								<select class="form-control" name="date_offset" id="inputOffset">
+									<option tal:repeat="value range(0,3)" tal:attributes="selected user.date_offset == value">${value}</option>
+								</select>
+								<div class="input-group-addon">days</div>
+								<div tal:condition="form_errors.get('date_offset')" class="input-group-addon">${form_errors.get('date_offset')}</div>
+							</div>
+							<p class="help-block">
+								Entries in your feeds will be shifted by this number of days into the past.
+							</p>
+						</div>
+						<div class="form-group">
+							<label for="inputFormat">Link format</label>
+							<div tal:omit-tag="'link_format' not in form_errors" class="input-group has-error">
+								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}" required />
+								<div tal:omit-tag="'link_format' not in form_errors" class="input-group-addon">${form_errors.get('link_format')}</div>
+							</div>
+							<p class="help-block">
+								Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
+							</p>
+							<ul class="help-block">
+								<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
+								<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
+								<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
+								<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
+								<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
+							</ul>
+							<p>
+								The default value will do a simple Google search. <strong>If you wish to revert to the default setting, copy the following value to the field above</strong>:<br />
+								<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
+							</p>
+							<noscript>
+								<div class="alert alert-warning" role="alert">
+									It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
+								</div>
+							</noscript>
+							<div id="linkPreview">
+								This is a preview using your current setting:
+								<div id="linkPreviewVal" class="well"></div>
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary">Update settings</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+</html>

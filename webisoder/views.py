@@ -21,13 +21,14 @@ from datetime import date, timedelta
 from pyramid.httpexceptions import HTTPFound
 from pyramid.response import Response
 from pyramid.security import remember, forget
+from pyramid.session import check_csrf_token
 from pyramid.view import view_config
 
 from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
-from .forms import ProfileForm, PasswordForm
+from .forms import ProfileForm, PasswordForm, FeedSettingsForm
 
 @decorator
 def authenticated(func, *args, **kwargs):
@@ -117,15 +118,15 @@ def unsubscribe(request):
 	session.flash('Successfully unsubscribed from "%s"' % show.name, 'info')
 	return HTTPFound(location=request.route_url('shows'))
 
-@view_config(route_name='login', renderer='templates/login.pt',
-							request_method='GET')
+@view_config(route_name='login', renderer='templates/login.pt', request_method='GET')
 def login_get(request):
 
 	return { 'user': None }
 
-@view_config(route_name='login', renderer='templates/login.pt',
-					request_method='POST', check_csrf=True)
+@view_config(route_name='login', renderer='templates/login.pt', request_method='POST')
 def login(request):
+
+	check_csrf_token(request)
 
 	name = request.POST.get('user')
 	password = request.POST.get('password')
@@ -147,8 +148,7 @@ def login(request):
 	request.session.flash('Login failed', 'warning')
 	return { 'user': name }
 
-@view_config(route_name='search', renderer='templates/search.pt',
-							request_method='POST')
+@view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
 @authenticated
 def search_post(request):
 
@@ -181,8 +181,7 @@ def logout(request):
 	request.session.flash('Successfully signed out. Goodbye.', 'info')
 	return HTTPFound(location=request.route_url('home'))
 
-@view_config(route_name='profile', renderer='templates/profile.pt',
-							request_method='GET')
+@view_config(route_name='profile', renderer='templates/profile.pt', request_method='GET')
 @authenticated
 def profile_get(request):
 
@@ -191,8 +190,7 @@ def profile_get(request):
 
 	return { 'user': user, 'form_errors': {} }
 
-@view_config(route_name='profile', renderer='templates/profile.pt',
-							request_method='POST')
+@view_config(route_name='profile', renderer='templates/profile.pt', request_method='POST')
 @authenticated
 def profile_post(request):
 
@@ -217,20 +215,68 @@ def profile_post(request):
 	request.session.flash('Your settings have been updated', 'info')
 	return HTTPFound(location=request.route_url('profile'))
 
-@view_config(route_name='reset_token', renderer='templates/profile.pt',
-							request_method='POST')
+@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='GET')
 @authenticated
-def reset_token_post(request):
+def settings_feed_get(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	return { 'user': user, 'form_errors': {} }
+
+@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET')
+@authenticated
+def settings_token_get(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	return { 'user': user, 'form_errors': {} }
+
+@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST')
+@authenticated
+def settings_feed_post(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	controls = request.POST.items()
+	form = Form(FeedSettingsForm())
+
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		request.session.flash('Failed to update profile', 'danger')
+		return { 'user': user, 'form_errors': e.error.asdict() }
+
+	user.days_back = data.get('days_back', user.days_back)
+	user.date_offset = data.get('date_offset', user.date_offset)
+	user.link_format = data.get('link_format', user.link_format)
+
+	request.session.flash('Your settings have been updated', 'info')
+	return HTTPFound(location=request.route_url('settings_feed'))
+
+@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST')
+@authenticated
+def settings_token_post(request):
 
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
 	user.reset_token()
 
 	request.session.flash('Your token has been reset', 'info')
-	return HTTPFound(location=request.route_url('profile'))
+	return HTTPFound(location=request.route_url('settings_token'))
 
-@view_config(route_name='password', renderer='templates/profile.pt',
-							request_method='POST')
+@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='GET')
+@authenticated
+def settings_pw_get(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	return { 'user': user, 'form_errors': {} }
+
+@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST')
 @authenticated
 def password_post(request):
 
@@ -261,7 +307,7 @@ def password_post(request):
 	user.password = data.get('new')
 
 	request.session.flash('Your password has been changed', 'info')
-	return HTTPFound(location=request.route_url('profile'))
+	return HTTPFound(location=request.route_url('settings_pw'))
 
 # TODO remove this
 @view_config(route_name='setup', renderer='templates/empty.pt',

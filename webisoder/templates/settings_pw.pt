@@ -1,0 +1,56 @@
+<html metal:use-macro="load: base_auth.pt">
+
+<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile.js')}"></script>
+
+<div metal:fill-slot="main" class="container">
+	<div class="page-header">
+		<h1>User profile for ${user.name}</h1>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-2">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Personal settings</strong></div>
+				<div class="list-group">
+					<a class="list-group-item" href="${request.route_url('profile')}">General settings</a>
+					<a class="list-group-item active" href="${request.route_url('settings_pw')}">Account settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_feed')}">Feed settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-10">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Account settings</strong></div>
+				<div class="panel-body">
+					<form method="post" action="${request.route_url('settings_pw')}">
+						<div class="form-group">
+							<label for="inputOld">Old password</label>
+							<div class="input-group has-error" tal:omit-tag="'current' not in form_errors">
+								<input type="password" name="current" class="form-control" id="inputOld" required />
+								<div tal:omit-tag="'current' not in form_errors" class="input-group-addon">${form_errors.get('current')}</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputNew">New password</label>
+							<div class="input-group has-error" tal:omit-tag="'new' not in form_errors">
+								<input type="password" name="new" class="form-control" id="inputNew" required />
+								<div tal:omit-tag="'new' not in form_errors" class="input-group-addon">${form_errors.get('new')}</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputConfirm">Confirm new password</label>
+							<div class="input-group has-error" tal:omit-tag="'verify' not in form_errors">
+								<input type="password" name="verify" class="form-control" id="inputConfirm" required />
+								<div tal:omit-tag="'verify' not in form_errors" class="input-group-addon">${form_errors.get('verify')}</div>
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary">Update password</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+</html>

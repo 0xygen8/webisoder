@@ -1,0 +1,40 @@
+<html metal:use-macro="load: base_auth.pt">
+
+<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile.js')}"></script>
+
+<div metal:fill-slot="main" class="container">
+	<div class="page-header">
+		<h1>User profile for ${user.name}</h1>
+	</div>
+
+	<div class="row">
+		<div class="col-sm-2">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Personal settings</strong></div>
+				<div class="list-group">
+					<a class="list-group-item" href="${request.route_url('profile')}">General settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_pw')}">Account settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_feed')}">Feed settings</a>
+					<a class="list-group-item active" href="${request.route_url('settings_token')}">Access token</a>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-10">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Access token</strong></div>
+				<div class="panel-body">
+					<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
+						<div class="form-group">
+							<p class="help-block">
+								The access token is required to access your feed and your calendar. <strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</strong>
+							</p>
+						</div>
+						<button type="submit" class="btn btn-danger">Reset token</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+</html>

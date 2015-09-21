@@ -26,7 +26,7 @@ from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
 from .views import index, episodes, profile_get, profile_post, password_post
-from .views import reset_token_post
+from .views import settings_token_post, settings_feed_post
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -268,6 +268,8 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'user': 'testuser2',
 			'password': 'secret'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
+
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -282,6 +284,8 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'user': '',
 			'password': 'wrong'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
+
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -295,6 +299,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request = testing.DummyRequest(post={
 			'password': 'wrong'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -309,6 +314,8 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'user': 'testuser100',
 			'password': 'wrong'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
+
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -323,6 +330,8 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'user': 'testuser100',
 			'password': ''
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
+
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -336,6 +345,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request = testing.DummyRequest(post={
 			'user': 'testuser100'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = login(request)
 		self.assertNotIn('user', request.session)
 		self.assertFalse(hasattr(res, 'location'))
@@ -350,6 +360,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 			'user': 'testuser100',
 			'password': 'secret'
 		})
+		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = login(request)
 
 		self.assertTrue(hasattr(res, 'location'))
@@ -573,6 +584,9 @@ class TestProfileView(unittest.TestCase):
 		super(TestProfileView, self).setUp()
 		self.config = testing.setUp()
 		self.config.add_route('profile', '__PROFILE__')
+		self.config.add_route('settings_token', '__TOKEN__')
+		self.config.add_route('settings_pw', '__PW__')
+		self.config.add_route('settings_feed', '__FEED__')
 
 		with transaction.manager:
 
@@ -611,9 +625,6 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
-			'link_format': 'ignore',
-			'days_back': '1',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -624,9 +635,6 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': '',
-			'link_format': 'ignore',
-			'days_back': '1',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -637,9 +645,6 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'notaproperaddress',
-			'link_format': 'ignore',
-			'days_back': '1',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -648,11 +653,7 @@ class TestProfileView(unittest.TestCase):
 		self.assertIn('form_errors', res)
 		self.assertIn('email', res.get('form_errors', {}))
 
-		request = testing.DummyRequest({
-			'link_format': 'ignore',
-			'days_back': '1',
-			'date_offset': '0'
-		})
+		request = testing.DummyRequest({})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -669,11 +670,11 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
@@ -682,7 +683,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -695,7 +696,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -707,7 +708,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -720,20 +721,17 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('https://www.example.com/', user.link_format)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 	def testUpdateSiteNews(self):
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'site_news': 'on',
-			'days_back': '6',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -744,9 +742,6 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
-			'link_format': 'ignore',
-			'days_back': '6',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -757,10 +752,7 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'site_news': 'on',
-			'days_back': '6',
-			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
 		res = profile_post(request)
@@ -772,90 +764,83 @@ class TestProfileView(unittest.TestCase):
 	def testUpdateMaxAge(self):
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': '6',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(6, user.days_back)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': '7',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': '8',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
 		self.assertIn('days_back', res.get('form_errors', {}))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': '-1',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
 		self.assertIn('days_back', res.get('form_errors', {}))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': '',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
 		self.assertIn('days_back', res.get('form_errors', {}))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
-			'link_format': 'ignore',
 			'days_back': 'nothing',
+			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
 		self.assertIn('days_back', res.get('form_errors', {}))
 
 		request = testing.DummyRequest({
-			'email': 'testuser@example.com',
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -870,11 +855,11 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '0'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(0, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
@@ -884,7 +869,7 @@ class TestProfileView(unittest.TestCase):
 		})
 		request = testing.DummyRequest({'date_offset': '0'})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(0, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -897,11 +882,11 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '1'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(1, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
@@ -910,11 +895,11 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '2'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__FEED__'))
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
@@ -923,7 +908,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '3'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -936,7 +921,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': 'A'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -948,7 +933,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1'
 		})
 		request.session['user'] = 'testuser12'
-		res = profile_post(request)
+		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -1034,7 +1019,7 @@ class TestProfileView(unittest.TestCase):
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__PW__'))
 
 	def testResetToken(self):
 
@@ -1044,16 +1029,16 @@ class TestProfileView(unittest.TestCase):
 		user = DBSession.query(User).get('testuser12')
 		token = user.token
 
-		res = reset_token_post(request)
+		res = settings_token_post(request)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__TOKEN__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 		token = user.token
 
-		res = reset_token_post(request)
+		res = settings_token_post(request)
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__PROFILE__'))
+		self.assertTrue(res.location.endswith('__TOKEN__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 

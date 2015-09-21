@@ -8,118 +8,47 @@
 	</div>
 
 	<div class="row">
-		<div class="col-sm-6">
-			<h3>Your profile settings</h3>
-			<form method="post" action="${request.route_url('profile')}">
-				<div class="form-group">
-					<label for="inputEmail">Email address</label>
-					<div tal:omit-tag="'email' not in form_errors" class="input-group has-error">
-						<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
-						<div tal:omit-tag="'email' not in form_errors" class="input-group-addon">${form_errors.get('email')}</div>
-					</div>
+		<div class="col-sm-2">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>Personal settings</strong></div>
+				<div class="list-group">
+					<a class="list-group-item active" href="${request.route_url('profile')}">General settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_pw')}">Account settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_feed')}">Feed settings</a>
+					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
 				</div>
-				<div class="form-group">
-					<div class="checkbox">
-						<label>
-							<input name="site_news" type="checkbox" tal:attributes="checked 'checked' if user.site_news else None" /> Receive site news
-						</label>
-					</div>
-				</div>
-				<div class="form-group">
-					<label for="inputDays">Maximum age</label>
-					<div tal:attributes="class 'input-group has-error' if form_errors.get('days_back') else 'input-group'">
-						<select class="form-control" name="days_back" id="inputDays">
-							<option tal:repeat="value range(1,8)" tal:attributes="selected user.days_back == value">${value}</option>
-						</select>
-						<div class="input-group-addon">days</div>
-						<div tal:condition="form_errors.get('days_back')" class="input-group-addon">${form_errors.get('days_back')}</div>
-					</div>
-					<p class="help-block">
-						Episodes which have first been aired more than the number of days specified here in the past will be hidden.
-					</p>
-				</div>
-				<div class="form-group">
-				<label for="inputOffset">Date offset</label>
-					<div tal:attributes="class 'input-group has-error' if form_errors.get('date_offset') else 'input-group'">
-						<select class="form-control" name="date_offset" id="inputOffset">
-							<option tal:repeat="value range(0,3)" tal:attributes="selected user.date_offset == value">${value}</option>
-						</select>
-						<div class="input-group-addon">days</div>
-						<div tal:condition="form_errors.get('date_offset')" class="input-group-addon">${form_errors.get('date_offset')}</div>
-					</div>
-					<p class="help-block">
-						Entries in your feeds will be shifted by this number of days into the past.
-					</p>
-				</div>
-				<div class="form-group">
-					<label for="inputFormat">Link format</label>
-					<div tal:omit-tag="'link_format' not in form_errors" class="input-group has-error">
-						<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}" required />
-						<div tal:omit-tag="'link_format' not in form_errors" class="input-group-addon">${form_errors.get('link_format')}</div>
-					</div>
-					<p class="help-block">
-						Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
-					</p>
-					<ul class="help-block">
-						<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
-						<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
-						<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
-						<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
-						<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
-					</ul>
-					<p>
-						The default value will do a simple Google search. <strong>If you wish to revert to the default setting, copy the following value to the field above</strong>:<br />
-						<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
-					</p>
-					<noscript>
-						<div class="alert alert-warning" role="alert">
-							It appears that your browser does not support JavaScript or that JavaScript has been disabled, the real-time preview functionality will not be available.
-						</div>
-					</noscript>
-					<div id="linkPreview">
-						This is a preview using your current setting:
-						<div id="linkPreviewVal" class="well"></div>
-					</div>
-				</div>
-				<button type="submit" class="btn btn-primary">Update profile</button>
-			</form>
+			</div>
 		</div>
-		<div class="col-sm-5 col-sm-offset-1">
-			<form method="post" action="${request.route_url('password')}">
-				<h3>Change password</h3>
-				<div class="form-group">
-					<div class="input-group has-error" tal:omit-tag="'current' not in form_errors">
-						<input type="password" name="current" class="form-control" id="inputFormat" required placeholder="Current password" />
-						<div tal:omit-tag="'current' not in form_errors" class="input-group-addon">${form_errors.get('current')}</div>
-					</div>
+		<div class="col-sm-10">
+			<div class="panel panel-default">
+				<div class="panel-heading"><strong>General settings</strong></div>
+				<div class="panel-body">
+					<form method="post" action="${request.route_url('profile')}">
+						<div class="form-group">
+							<label for="inputEmail">Email address</label>
+							<div tal:omit-tag="'email' not in form_errors" class="input-group has-error">
+								<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
+								<div tal:omit-tag="'email' not in form_errors" class="input-group-addon">${form_errors.get('email')}</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputNews">Site news</label>
+							<div class="checkbox">
+								<label>
+									<input tal:attributes="checked 'checked' if user.site_news else None" name="site_news" id="inputNews" type="checkbox" /> Receive site news
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputEmail">Your account</label>
+							<p class="form-control-static">
+								You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
+							</p>
+						</div>
+						<button type="submit" class="btn btn-primary">Update settings</button>
+					</form>
 				</div>
-				<div class="form-group">
-					<div class="input-group has-error" tal:omit-tag="'new' not in form_errors">
-						<input type="password" name="new" class="form-control" id="inputFormat" required placeholder="New password" />
-						<div tal:omit-tag="'new' not in form_errors" class="input-group-addon">${form_errors.get('new')}</div>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="input-group has-error" tal:omit-tag="'verify' not in form_errors">
-						<input type="password" name="verify" class="form-control" id="inputFormat" required placeholder="Confirm new password" />
-						<div tal:omit-tag="'verify' not in form_errors" class="input-group-addon">${form_errors.get('verify')}</div>
-					</div>
-				</div>
-				<button type="submit" class="btn btn-primary">Update password</button>
-			</form>
-			<form method="post" action="${request.route_url('reset_token')}" id="resetTokenForm">
-				<h3>Access token</h3>
-				<div class="form-group">
-					<p class="help-block">
-						The access token is required to access your feed and your calendar. If you change it all your previous feed, calendar and bookmark links become invalid.
-					</p>
-				</div>
-				<button type="submit" class="btn btn-primary">Reset token</button>
-			</form>
-
-			<h3>Your account</h3>
-
-			<p>You joined webisoder on ${user.signup.strftime('%B %d %Y')}.</p>
+			</div>
 		</div>
 	</div>
 </div>
