@@ -20,7 +20,8 @@ requires = [
     'waitress',
     'decorator',
     'colander',
-    'deform'
+    'deform',
+    'tvdb_api'
     ]
 
 setup(name='webisoder',
