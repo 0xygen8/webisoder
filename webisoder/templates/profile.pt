@@ -39,7 +39,7 @@
 								</label>
 							</div>
 						</div>
-						<div class="form-group">
+						<div tal:condition="user.signup" class="form-group">
 							<label for="inputEmail">Your account</label>
 							<p class="form-control-static">
 								You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
