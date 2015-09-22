@@ -9,7 +9,11 @@ function updateLinkPreview()
 	format = format.replace('##EPISODE##', '06');
 	format = format.replace('##TITLE##', 'The Crucible');
 
-	$('#linkPreviewVal').html('<a href="' + format + '">' + format + '</a>');
+	var link = $('<a>');
+	link.attr('href', format);
+	link.text(format);
+
+	$('#linkPreviewVal').html(link);
 }
 
 function watchFormatChanges()
