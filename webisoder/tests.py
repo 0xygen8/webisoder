@@ -556,9 +556,38 @@ class TestShowsView(unittest.TestCase):
 
 	def test_search(self):
 
+		class mock_show(object):
+
+			def __init__(self, id):
+				self.attr = {}
+				self.attr['id'] = id
+
+			def get(self, attr):
+				return self.attr.get(attr)
+
+		class tvdb_mock():
+
+			def __init__(self, custom_ui=None):
+				self.items = {
+					'big bang theory': [ mock_show(80379) ],
+					'doctor who': [
+						mock_show(1),
+						mock_show(2),
+						mock_show(3),
+						mock_show(4),
+						mock_show(5),
+						mock_show(6)
+					]
+				}
+				self.ui = custom_ui(None)
+
+			def __getitem__(self, item):
+				if item in self.items:
+					self.ui.selectSeries(self.items[item])
+
 		request = testing.DummyRequest(post={'bla': 'big bang'})
 		request.session['user'] = 'testuser1'
-		res = search_post(request)
+		res = search_post(request, tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		errors = res.get('form_errors')
 		self.assertIn('search', errors)
@@ -570,7 +599,7 @@ class TestShowsView(unittest.TestCase):
 
 		request = testing.DummyRequest(post={'search': 'big bang theory'})
 		request.session['user'] = 'testuser1'
-		res = search_post(request)
+		res = search_post(request, tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 1)
 		self.assertEqual(res.get('search'), 'big bang theory')
 		show = res.get('shows')[0]
@@ -582,7 +611,7 @@ class TestShowsView(unittest.TestCase):
 
 		request = testing.DummyRequest(post={'search': 'this does not exist'})
 		request.session['user'] = 'testuser1'
-		res = search_post(request)
+		res = search_post(request, tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 0)
 		self.assertIn('form_errors', res)
 		self.assertIn('search', res)
@@ -591,7 +620,7 @@ class TestShowsView(unittest.TestCase):
 
 		request = testing.DummyRequest(post={'search': 'doctor who'})
 		request.session['user'] = 'testuser1'
-		res = search_post(request)
+		res = search_post(request, tvdb=tvdb_mock)
 		self.assertTrue(len(res.get('shows')) > 5)
 		self.assertIn('form_errors', res)
 		self.assertIn('search', res)
@@ -600,7 +629,7 @@ class TestShowsView(unittest.TestCase):
 
 		request = testing.DummyRequest(post={'search': 'do'})
 		request.session['user'] = 'testuser1'
-		res = search_post(request)
+		res = search_post(request, tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')

@@ -165,7 +165,7 @@ def login(request):
 
 @view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
 @authenticated
-def search_post(request):
+def search_post(request, tvdb=Tvdb):
 
 	controls = request.POST.items()
 	form = Form(SearchForm())
@@ -185,7 +185,7 @@ def search_post(request):
 			result.extend(allSeries)
 			return BaseUI.selectSeries(self, allSeries)
 
-	tv = Tvdb(custom_ui=TVDBSearch)
+	tv = tvdb(custom_ui=TVDBSearch)
 
 	try:
 		tv[search]
