@@ -13,6 +13,9 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<form class="form-inline" method="post" action="${request.route_url('search')}">
+				<div tal:condition="'search' in form_errors" class="alert alert-danger" role="alert">
+					<strong>Error!</strong> ${form_errors.get('search')}
+				</div>
 				<div class="form-group">
 					<label class="sr-only" for="searchShow">Show name</label>
 					<div class="input-group">

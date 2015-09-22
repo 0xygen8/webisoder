@@ -491,17 +491,20 @@ class TestShowsView(unittest.TestCase):
 		request = testing.DummyRequest()
 		request.session['user'] = 'testuser1'
 		res = unsubscribe(request)
-		self.assertEqual(res.get('error'), 'no show specified')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': 'a'})
 		request.session['user'] = 'testuser1'
 		res = unsubscribe(request)
-		self.assertEqual(res.get('error'), 'illegal show id')
+		self.assertTrue(hasattr(res, 'location'))
+		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': '5'})
 		request.session['user'] = 'testuser1'
 		res = unsubscribe(request)
-		self.assertEqual(res.get('error'), 'no such show')
+		self.assertTrue(hasattr(res, 'code'))
+		self.assertEqual(res.code, 404)
 
 		request = testing.DummyRequest(post={'show': '3'})
 		request.session['user'] = 'testuser1'
@@ -526,7 +529,14 @@ class TestShowsView(unittest.TestCase):
 		request = testing.DummyRequest(post={'bla': 'big bang'})
 		request.session['user'] = 'testuser1'
 		res = search_post(request)
-		self.assertEqual(res.get('error'), 'search term missing')
+		self.assertIn('form_errors', res)
+		errors = res.get('form_errors')
+		self.assertIn('search', errors)
+		error = errors.get('search')
+		self.assertEqual(error, 'Required')
+		self.assertIn('search', res)
+		search = res.get('search')
+		self.assertEqual(search, '')
 
 		request = testing.DummyRequest(post={'search': 'big bang theory'})
 		request.session['user'] = 'testuser1'
@@ -535,16 +545,36 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual(res.get('search'), 'big bang theory')
 		show = res.get('shows')[0]
 		self.assertEqual(show.get('id'), 80379)
+		self.assertIn('form_errors', res)
+		self.assertIn('search', res)
+		search = res.get('search')
+		self.assertEqual(search, 'big bang theory')
 
 		request = testing.DummyRequest(post={'search': 'this does not exist'})
 		request.session['user'] = 'testuser1'
 		res = search_post(request)
 		self.assertEqual(len(res.get('shows')), 0)
+		self.assertIn('form_errors', res)
+		self.assertIn('search', res)
+		search = res.get('search')
+		self.assertEqual(search, 'this does not exist')
 
 		request = testing.DummyRequest(post={'search': 'doctor who'})
 		request.session['user'] = 'testuser1'
 		res = search_post(request)
 		self.assertTrue(len(res.get('shows')) > 5)
+		self.assertIn('form_errors', res)
+		self.assertIn('search', res)
+		search = res.get('search')
+		self.assertEqual(search, 'doctor who')
+
+		request = testing.DummyRequest(post={'search': 'do'})
+		request.session['user'] = 'testuser1'
+		res = search_post(request)
+		self.assertIn('form_errors', res)
+		self.assertIn('search', res)
+		search = res.get('search')
+		self.assertEqual(search, 'do')
 
 	def test_episodes(self):
 

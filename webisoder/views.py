@@ -18,7 +18,7 @@ from decorator import decorator
 from deform import Form, ValidationFailure
 from datetime import date, timedelta
 
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.session import check_csrf_token
@@ -28,7 +28,8 @@ from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
-from .forms import ProfileForm, PasswordForm, FeedSettingsForm
+from .forms import ProfileForm, PasswordForm, FeedSettingsForm, UnsubscribeForm
+from .forms import LoginForm, SearchForm
 
 @decorator
 def authenticated(func, *args, **kwargs):
@@ -40,7 +41,7 @@ def authenticated(func, *args, **kwargs):
 	else:
 		return HTTPFound(location=request.route_url('login'))
 
-@view_config(route_name='home', renderer='templates/index.pt')
+@view_config(route_name='home', renderer='templates/index.pt', request_method='GET')
 def index(request):
 
 	if 'user' in request.session:
@@ -48,7 +49,7 @@ def index(request):
 
 	return {}
 
-@view_config(route_name='shows', renderer='templates/shows.pt')
+@view_config(route_name='shows', renderer='templates/shows.pt', request_method='GET')
 @authenticated
 def shows(request):
 
@@ -56,7 +57,7 @@ def shows(request):
 	user = DBSession.query(User).get(uid)
 	return {'subscribed': user.shows, 'shows': DBSession.query(Show).all()}
 
-@view_config(route_name='episodes', renderer='templates/episodes.pt')
+@view_config(route_name='episodes', renderer='templates/episodes.pt', request_method='GET')
 @authenticated
 def episodes(request):
 
@@ -68,7 +69,7 @@ def episodes(request):
 
 	return { 'episodes': episodes }
 
-@view_config(route_name='subscribe', renderer='templates/shows.pt')
+@view_config(route_name='subscribe', renderer='templates/shows.pt', request_method='POST')
 @authenticated
 def subscribe(request):
 
@@ -93,22 +94,24 @@ def subscribe(request):
 	session.flash('Successfully subscribed to "%s"' % show.name, 'info')
 	return HTTPFound(location=request.route_url('shows'))
 
-@view_config(route_name='unsubscribe', renderer='templates/shows.pt')
+@view_config(route_name='unsubscribe', renderer='templates/shows.pt', request_method='POST')
 @authenticated
 def unsubscribe(request):
 
-	show_id = request.POST.get('show')
+	controls = request.POST.items()
+	form = Form(UnsubscribeForm())
 
-	if not show_id:
-		return { 'error': 'no show specified' }
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		request.session.flash('Failed to unsubscribe', 'danger')
+		return HTTPFound(location=request.route_url('shows'))
 
-	if not show_id.isdigit():
-		return { 'error': 'illegal show id' }
-
-	show = DBSession.query(Show).get(int(show_id))
+	show_id = data.get('show', 0)
+	show = DBSession.query(Show).get(show_id)
 
 	if not show:
-		return { 'error': 'no such show' }
+		return HTTPNotFound()
 
 	session = request.session
 	uid = session.get('user')
@@ -128,12 +131,17 @@ def login(request):
 
 	check_csrf_token(request)
 
-	name = request.POST.get('user')
-	password = request.POST.get('password')
+	controls = request.POST.items()
+	form = Form(LoginForm())
 
-	if not name or not password:
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
 		request.session.flash('Login failed', 'warning')
 		return { 'user': None }
+
+	name = data.get('user')
+	password = data.get('password')
 
 	user = DBSession.query(User).get(name)
 
@@ -152,12 +160,18 @@ def login(request):
 @authenticated
 def search_post(request):
 
-	search = request.POST.get('search')
+	controls = request.POST.items()
+	form = Form(SearchForm())
 
-	if not search:
-		return { 'error': 'search term missing' }
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		search = request.POST.get('search', '')
+		errors = e.error.asdict()
+		return { 'search': search, 'form_errors': errors, 'shows': [] }
 
 	result = []
+	search = data.get('search')
 
 	class TVDBSearch(BaseUI):
 		def selectSeries(self, allSeries):
@@ -169,9 +183,9 @@ def search_post(request):
 	try:
 		tv[search]
 	except tvdb_shownotfound:
-		return { 'shows': [], 'search': search }
+		return { 'shows': [], 'search': search, 'form_errors': {} }
 
-	return { 'shows': result, 'search': search }
+	return { 'shows': result, 'search': search, 'form_errors': {} }
 
 @view_config(route_name='logout', request_method='GET')
 @authenticated
