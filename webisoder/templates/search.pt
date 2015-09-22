@@ -53,6 +53,7 @@
 				</td>
 				<td>
 					<form method="post" action="/subscribe-ext"> <!-- TODO use dynamic URL -->
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<input type="hidden" name="show" value="${show.seriesid}" />
 						<input type="submit" class="btn btn-primary btn-xs" value="Subscribe" />
 					</form>

@@ -73,6 +73,9 @@ def episodes(request):
 @authenticated
 def subscribe(request):
 
+	# Check the CSRF token
+	check_csrf_token(request)
+
 	show_id = request.POST.get('show')
 
 	if not show_id:
@@ -97,6 +100,9 @@ def subscribe(request):
 @view_config(route_name='unsubscribe', renderer='templates/shows.pt', request_method='POST')
 @authenticated
 def unsubscribe(request):
+
+	# Check the CSRF token
+	check_csrf_token(request)
 
 	controls = request.POST.items()
 	form = Form(UnsubscribeForm())
@@ -129,6 +135,7 @@ def login_get(request):
 @view_config(route_name='login', renderer='templates/login.pt', request_method='POST')
 def login(request):
 
+	# Check the CSRF token
 	check_csrf_token(request)
 
 	controls = request.POST.items()
@@ -208,6 +215,9 @@ def profile_get(request):
 @authenticated
 def profile_post(request):
 
+	# Check the CSRF token
+	check_csrf_token(request)
+
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
 
@@ -237,19 +247,12 @@ def settings_feed_get(request):
 	user = DBSession.query(User).get(uid)
 
 	return { 'user': user, 'form_errors': {} }
-
-@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET')
-@authenticated
-def settings_token_get(request):
-
-	uid = request.session.get('user')
-	user = DBSession.query(User).get(uid)
-
-	return { 'user': user, 'form_errors': {} }
-
 @view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST')
 @authenticated
 def settings_feed_post(request):
+
+	# Check the CSRF token
+	check_csrf_token(request)
 
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
@@ -270,9 +273,21 @@ def settings_feed_post(request):
 	request.session.flash('Your settings have been updated', 'info')
 	return HTTPFound(location=request.route_url('settings_feed'))
 
+@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET')
+@authenticated
+def settings_token_get(request):
+
+	uid = request.session.get('user')
+	user = DBSession.query(User).get(uid)
+
+	return { 'user': user, 'form_errors': {} }
+
 @view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST')
 @authenticated
 def settings_token_post(request):
+
+	# Check the CSRF token
+	check_csrf_token(request)
 
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)
@@ -293,6 +308,9 @@ def settings_pw_get(request):
 @view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST')
 @authenticated
 def password_post(request):
+
+	# Check the CSRF token
+	check_csrf_token(request)
 
 	uid = request.session.get('user')
 	user = DBSession.query(User).get(uid)

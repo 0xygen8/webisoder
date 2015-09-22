@@ -24,6 +24,7 @@
 				<div class="panel-heading"><strong>Feed settings</strong></div>
 				<div class="panel-body">
 					<form method="post" action="${request.route_url('settings_feed')}">
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<label for="inputDays">Maximum age</label>
 							<div tal:attributes="class 'input-group has-error' if form_errors.get('days_back') else 'input-group'">

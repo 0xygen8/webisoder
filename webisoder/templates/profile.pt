@@ -24,6 +24,7 @@
 				<div class="panel-heading"><strong>General settings</strong></div>
 				<div class="panel-body">
 					<form method="post" action="${request.route_url('profile')}">
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<label for="inputEmail">Email address</label>
 							<div tal:omit-tag="'email' not in form_errors" class="input-group has-error">

@@ -24,6 +24,7 @@
 				<div class="panel-heading"><strong>Account settings</strong></div>
 				<div class="panel-body">
 					<form method="post" action="${request.route_url('settings_pw')}">
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<label for="inputOld">Old password</label>
 							<div class="input-group has-error" tal:omit-tag="'current' not in form_errors">

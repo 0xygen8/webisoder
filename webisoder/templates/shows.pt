@@ -44,6 +44,7 @@
 				</td>
 				<td>
 					<form method="post" action="${request.route_url('unsubscribe')}">
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<input type="hidden" name="show" value="${show.id}" />
 						<input type="submit" class="btn btn-primary btn-xs" value="Unsubscribe" />
 					</form>
@@ -77,6 +78,7 @@
 			<td>${item.name}</td>
 			<td>
 				<form method="post" action="${request.route_url('subscribe')}">
+					<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 					<input type="hidden" name="show" value="${item.id}" />
 					<input type="submit" class="btn btn-primary" value="Subscribe" />
 				</form>

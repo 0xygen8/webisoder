@@ -24,6 +24,7 @@
 				<div class="panel-heading"><strong>Access token</strong></div>
 				<div class="panel-body">
 					<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
+						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<p class="help-block">
 								The access token is required to access your feed and your calendar. <strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</strong>
