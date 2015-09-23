@@ -44,6 +44,7 @@ class ProfileForm(MappingSchema):
 
 	email = SchemaNode(String(), validator=Email())
 	site_news = SchemaNode(Boolean())
+	password = SchemaNode(String())
 
 class FeedSettingsForm(MappingSchema):
 

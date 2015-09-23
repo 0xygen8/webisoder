@@ -230,10 +230,13 @@ def profile_post(request):
 		request.session.flash('Failed to update profile', 'danger')
 		return { 'user': user, 'form_errors': e.error.asdict() }
 
+	if not user.authenticate(data.get('password')):
+
+		request.session.flash('Password change failed', 'danger')
+		msg = 'Wrong password'
+		return { 'user': user, 'form_errors': { 'password': msg } }
+
 	user.mail = data.get('email', user.mail)
-	user.days_back = data.get('days_back', user.days_back)
-	user.date_offset = data.get('date_offset', user.date_offset)
-	user.link_format = data.get('link_format', user.link_format)
 	user.site_news = data.get('site_news', user.site_news)
 
 	request.session.flash('Your settings have been updated', 'info')

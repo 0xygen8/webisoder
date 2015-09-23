@@ -726,12 +726,37 @@ class TestProfileView(unittest.TestCase):
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		errors = res.get('form_errors', {})
+		self.assertIn('password', errors)
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'password': 'wrong'
+		})
+		request.session['user'] = 'testuser12'
+		request.params['csrf_token'] = request.session.get_csrf_token()
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
+		self.assertIn('form_errors', res)
+		errors = res.get('form_errors', {})
+		self.assertIn('password', errors)
+
+		request = testing.DummyRequest({
+			'email': 'testuser@example.com',
+			'password': 'secret'
+		})
+		request.session['user'] = 'testuser12'
+		request.params['csrf_token'] = request.session.get_csrf_token()
+		res = profile_post(request)
+		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('testuser@example.com', user.mail)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__PROFILE__'))
 
 		request = testing.DummyRequest({
 			'email': '',
+			'password': 'secret'
 		})
 		request.session['user'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
@@ -743,6 +768,7 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'notaproperaddress',
+			'password': 'secret'
 		})
 		request.session['user'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
@@ -841,6 +867,7 @@ class TestProfileView(unittest.TestCase):
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
 			'site_news': 'on',
+			'password': 'secret'
 		})
 		request.session['user'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
@@ -852,6 +879,7 @@ class TestProfileView(unittest.TestCase):
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
+			'password': 'secret'
 		})
 		request.session['user'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
@@ -864,6 +892,7 @@ class TestProfileView(unittest.TestCase):
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
 			'site_news': 'on',
+			'password': 'secret'
 		})
 		request.session['user'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()

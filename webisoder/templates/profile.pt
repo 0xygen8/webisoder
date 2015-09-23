@@ -40,6 +40,16 @@
 								</label>
 							</div>
 						</div>
+						<div class="form-group">
+							<label for="inputPassword">Your password</label>
+							<div tal:omit-tag="'password' not in form_errors" class="input-group has-error">
+								<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
+								<div tal:omit-tag="'password' not in form_errors" class="input-group-addon">${form_errors.get('password')}</div>
+							</div>
+							<p class="help-block">
+								You need to confirm your password to make changes to these settings.
+							</p>
+						</div>
 						<div tal:condition="user.signup" class="form-group">
 							<label for="inputEmail">Your account</label>
 							<p class="form-control-static">
