@@ -43,6 +43,7 @@ def main(global_config, **settings):
 	config.add_route('settings_pw', '/settings/password')
 	config.add_route('settings_token', '/settings/token')
 	config.add_route('episodes', '/episodes')
+	config.add_route('feed', '/atom/{user}/{token}')
 	config.add_route('subscribe', '/subscribe')
 	config.add_route('unsubscribe', '/unsubscribe')
 	config.add_route('setup', '/setup') # TODO remove this

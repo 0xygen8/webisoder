@@ -16,9 +16,10 @@
 
 from decorator import decorator
 from deform import Form, ValidationFailure
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
-from pyramid.httpexceptions import HTTPFound, HTTPNotFound
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPUnauthorized
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.session import check_csrf_token
@@ -68,6 +69,27 @@ def episodes(request):
 	episodes = [e for e in user.episodes if e.airdate >= then]
 
 	return { 'episodes': episodes }
+
+@view_config(route_name='feed', renderer='templates/feed.pt', request_method='GET')
+def feed(request):
+
+	uid = request.matchdict.get('user')
+	token = request.matchdict.get('token')
+
+	if not uid:
+		return HTTPBadRequest()
+
+	user = DBSession.query(User).get(uid)
+	if not user:
+		return HTTPNotFound()
+
+	if token != user.token:
+		return HTTPUnauthorized('Invalid access token.')
+
+	then = date.today() - timedelta(user.days_back or 0)
+	episodes = [e for e in user.episodes if e.airdate >= then]
+
+	return { 'episodes': episodes, 'user': user, 'now': datetime.now() }
 
 @view_config(route_name='subscribe', renderer='templates/shows.pt', request_method='POST')
 @authenticated

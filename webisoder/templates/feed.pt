@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+	<title>Webisoder feed for ${user.name}</title>
+	<subtitle>All your upcoming TV episodes</subtitle>
+	<link href="http://www.webisoder.net/"/>
+	<link rel="self" href="http://www.webisoder.net/atom/${user.name}/${user.token}"/>
+	<updated>${now.strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
+	<author>
+		<name>webisoder</name>
+	</author>
+	<id>urn:uuid:webisoder-${user.name}</id>
+	<entry tal:repeat="episode episodes">
+		<title>${episode.airdate.strftime('%a, %b %d, %Y')}: ${episode}</title>
+		<link href="${episode.render(user.link_format)}"/>
+		<id>urn:uuid:webisoder-${episode.show.id}-${episode.season}x${"%02d" % episode.num}</id>
+		<updated>${episode.updated.strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
+		<summary>Episode ${"%dx%02d" % (episode.season, episode.num)} from the show "${episode.show.name}" titled "${episode.title}"</summary>
+	</entry>
+</feed>

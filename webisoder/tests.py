@@ -27,7 +27,7 @@ from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
 from .views import index, episodes, profile_get, profile_post, password_post
-from .views import settings_token_post, settings_feed_post
+from .views import settings_token_post, settings_feed_post, feed
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -411,6 +411,7 @@ class TestShowsView(unittest.TestCase):
 
 			user = User(name='testuser1')
 			user.password = 'secret'
+			user.token = 'mytoken'
 			user.days_back = 0
 			DBSession.add(user)
 
@@ -659,6 +660,54 @@ class TestShowsView(unittest.TestCase):
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 2
 		res = episodes(request)
+		ep = res.get('episodes', [])
+		self.assertEqual(3, len(ep))
+
+		self.assertEqual('ep4', ep[0].title)
+		self.assertEqual('ep5', ep[1].title)
+		self.assertEqual('ep2', ep[2].title)
+
+	def test_feed(self):
+
+		request = testing.DummyRequest()
+		request.session['user'] = 'testuser1'
+		res = feed(request)
+		self.assertEqual(400, res.code)
+
+		request = testing.DummyRequest()
+		request.matchdict['user'] = 'testuser1'
+		res = feed(request)
+		self.assertEqual(401, res.code)
+
+		request = testing.DummyRequest()
+		request.matchdict['user'] = 'testuser1'
+		request.matchdict['token'] = 'wrong'
+		res = feed(request)
+		self.assertEqual(401, res.code)
+
+		request = testing.DummyRequest()
+		request.matchdict['user'] = 'testuser1'
+		request.matchdict['token'] = 'mytoken'
+		res = feed(request)
+
+		ep = res.get('episodes', [])
+		self.assertEqual(2, len(ep))
+
+		self.assertEqual('ep5', ep[0].title)
+		self.assertEqual('ep2', ep[1].title)
+
+		# 1 day back
+		user = DBSession.query(User).get('testuser1')
+		user.days_back = 1
+		res = feed(request)
+
+		ep = res.get('episodes', [])
+		self.assertEqual(2, len(ep))
+
+		# 2 days back
+		user = DBSession.query(User).get('testuser1')
+		user.days_back = 2
+		res = feed(request)
 		ep = res.get('episodes', [])
 		self.assertEqual(3, len(ep))
 
