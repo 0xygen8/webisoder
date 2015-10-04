@@ -1,0 +1,9 @@
+<tal:setHeader >${setattr(request.response,'content_type', 'text/calendar')}</tal:setHeader>BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Webisoder//NONSGML BETA//EN
+<div tal:repeat="episode episodes" tal:omit-tag="">BEGIN:VEVENT
+DTSTART;VALUE=DATE:${episode.airdate.strftime('%Y%m%d')}
+DTSTAMP:${episode.airdate.strftime('%Y%m%dT%H%M%SZ')}
+SUMMARY:${episode}
+END:VEVENT</div>
+END:VCALENDAR

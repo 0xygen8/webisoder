@@ -42,6 +42,26 @@ def authenticated(func, *args, **kwargs):
 	else:
 		return HTTPFound(location=request.route_url('login'))
 
+@decorator
+def securetoken(func, *args, **kwargs):
+
+	request = args[0]
+
+	uid = request.matchdict.get('user')
+	token = request.matchdict.get('token')
+
+	if not uid:
+		return HTTPBadRequest()
+
+	user = DBSession.query(User).get(uid)
+	if not user:
+		return HTTPNotFound()
+
+	if token != user.token:
+		return HTTPUnauthorized('Invalid access token.')
+
+	return func(*args, **kwargs)
+
 @view_config(route_name='home', renderer='templates/index.pt', request_method='GET')
 def index(request):
 
@@ -71,20 +91,13 @@ def episodes(request):
 	return { 'episodes': episodes }
 
 @view_config(route_name='feed', renderer='templates/feed.pt', request_method='GET')
+@view_config(route_name='ical', renderer='templates/ical.pt', request_method='GET')
+@view_config(route_name='html', renderer='templates/episodes.pt', request_method='GET')
+@securetoken
 def feed(request):
 
 	uid = request.matchdict.get('user')
-	token = request.matchdict.get('token')
-
-	if not uid:
-		return HTTPBadRequest()
-
 	user = DBSession.query(User).get(uid)
-	if not user:
-		return HTTPNotFound()
-
-	if token != user.token:
-		return HTTPUnauthorized('Invalid access token.')
 
 	then = date.today() - timedelta(user.days_back or 0)
 	episodes = [e for e in user.episodes if e.airdate >= then]

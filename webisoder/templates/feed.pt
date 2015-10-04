@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<tal:setHeader >
+    ${setattr(request.response,'content_type', 'application/atom+xml')}
+</tal:setHeader>
+
 <feed xmlns="http://www.w3.org/2005/Atom">
 	<title>Webisoder feed for ${user.name}</title>
 	<subtitle>All your upcoming TV episodes</subtitle>
