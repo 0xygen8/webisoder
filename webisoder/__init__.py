@@ -17,10 +17,15 @@
 from pyramid.config import Configurator
 from sqlalchemy import engine_from_config
 
-from .models import (
-	DBSession,
-	Base,
-)
+from pyramid.authorization import ACLAuthorizationPolicy
+from pyramid.authentication import SessionAuthenticationPolicy
+from pyramid.httpexceptions import HTTPFound
+
+from .models import DBSession, Base
+
+def redirect_login(request):
+
+	return HTTPFound(location=request.route_url('login'))
 
 def main(global_config, **settings):
 
@@ -29,7 +34,14 @@ def main(global_config, **settings):
 	engine = engine_from_config(settings, 'sqlalchemy.')
 	DBSession.configure(bind=engine)
 	Base.metadata.bind = engine
-	config = Configurator(settings=settings)
+	config = Configurator(settings=settings, root_factory='.resources.Root')
+
+	authentication_policy = SessionAuthenticationPolicy()
+	authorization_policy = ACLAuthorizationPolicy()
+
+	config.set_authentication_policy(authentication_policy)
+	config.set_authorization_policy(authorization_policy)
+	config.add_forbidden_view(redirect_login)
 	config.include('pyramid_chameleon')
 	config.include("pyramid_beaker")
 	config.add_static_view('static', 'static', cache_max_age=3600)

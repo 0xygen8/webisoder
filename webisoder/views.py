@@ -33,16 +33,6 @@ from .forms import ProfileForm, PasswordForm, FeedSettingsForm, UnsubscribeForm
 from .forms import LoginForm, SearchForm
 
 @decorator
-def authenticated(func, *args, **kwargs):
-
-	request = args[0]
-
-	if 'user' in request.session:
-		return func(*args, **kwargs)
-	else:
-		return HTTPFound(location=request.route_url('login'))
-
-@decorator
 def securetoken(func, *args, **kwargs):
 
 	request = args[0]
@@ -65,30 +55,29 @@ def securetoken(func, *args, **kwargs):
 @view_config(route_name='home', renderer='templates/index.pt', request_method='GET')
 def index(request):
 
-	if 'user' in request.session:
+	if request.authenticated_userid:
 		return HTTPFound(location=request.route_url('shows'))
 
 	return {}
 
-@view_config(route_name='shows', renderer='templates/shows.pt', request_method='GET')
-@authenticated
+@view_config(route_name='shows', renderer='templates/shows.pt', request_method='GET', permission='auth')
 def shows(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
+
 	return {'subscribed': user.shows, 'shows': DBSession.query(Show).all()}
 
-@view_config(route_name='episodes', renderer='templates/episodes.pt', request_method='GET')
-@authenticated
+@view_config(route_name='episodes', renderer='templates/episodes.pt', request_method='GET', permission='auth')
 def episodes(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	then = date.today() - timedelta(user.days_back or 0)
 	episodes = [e for e in user.episodes if e.airdate >= then]
 
-	return { 'episodes': episodes }
+	return { 'episodes': episodes, 'user': user }
 
 @view_config(route_name='feed', renderer='templates/feed.pt', request_method='GET')
 @view_config(route_name='ical', renderer='templates/ical.pt', request_method='GET')
@@ -104,8 +93,7 @@ def feed(request):
 
 	return { 'episodes': episodes, 'user': user, 'now': datetime.now() }
 
-@view_config(route_name='subscribe', renderer='templates/shows.pt', request_method='POST')
-@authenticated
+@view_config(route_name='subscribe', renderer='templates/shows.pt', request_method='POST', permission='auth')
 def subscribe(request):
 
 	# Check the CSRF token
@@ -124,16 +112,15 @@ def subscribe(request):
 	if not show:
 		return { 'error': 'no such show' }
 
-	session = request.session
-	uid = session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 	user.shows.append(show)
 
+	session = request.session
 	session.flash('Successfully subscribed to "%s"' % show.name, 'info')
 	return HTTPFound(location=request.route_url('shows'))
 
-@view_config(route_name='unsubscribe', renderer='templates/shows.pt', request_method='POST')
-@authenticated
+@view_config(route_name='unsubscribe', renderer='templates/shows.pt', request_method='POST', permission='auth')
 def unsubscribe(request):
 
 	# Check the CSRF token
@@ -155,7 +142,7 @@ def unsubscribe(request):
 		return HTTPNotFound()
 
 	session = request.session
-	uid = session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 	user.shows.remove(show)
 
@@ -192,14 +179,13 @@ def login(request):
 		return { 'user': name }
 
 	if user.authenticate(password):
-		request.session['user'] = name
+		request.session['auth.userid'] = name
 		return HTTPFound(location=request.route_url('shows'))
 
 	request.session.flash('Login failed', 'warning')
 	return { 'user': name }
 
-@view_config(route_name='search', renderer='templates/search.pt', request_method='POST')
-@authenticated
+@view_config(route_name='search', renderer='templates/search.pt', request_method='POST', permission='auth')
 def search_post(request, tvdb=Tvdb):
 
 	controls = request.POST.items()
@@ -229,31 +215,28 @@ def search_post(request, tvdb=Tvdb):
 
 	return { 'shows': result, 'search': search, 'form_errors': {} }
 
-@view_config(route_name='logout', request_method='GET')
-@authenticated
+@view_config(route_name='logout', request_method='GET', permission='auth')
 def logout(request):
 
 	request.session.clear()
 	request.session.flash('Successfully signed out. Goodbye.', 'info')
 	return HTTPFound(location=request.route_url('home'))
 
-@view_config(route_name='profile', renderer='templates/profile.pt', request_method='GET')
-@authenticated
+@view_config(route_name='profile', renderer='templates/profile.pt', request_method='GET', permission='auth')
 def profile_get(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	return { 'user': user, 'form_errors': {} }
 
-@view_config(route_name='profile', renderer='templates/profile.pt', request_method='POST')
-@authenticated
+@view_config(route_name='profile', renderer='templates/profile.pt', request_method='POST', permission='auth')
 def profile_post(request):
 
 	# Check the CSRF token
 	check_csrf_token(request)
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	controls = request.POST.items()
@@ -277,22 +260,20 @@ def profile_post(request):
 	request.session.flash('Your settings have been updated', 'info')
 	return HTTPFound(location=request.route_url('profile'))
 
-@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='GET')
-@authenticated
+@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='GET', permission='auth')
 def settings_feed_get(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	return { 'user': user, 'form_errors': {} }
-@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST')
-@authenticated
+@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST', permission='auth')
 def settings_feed_post(request):
 
 	# Check the CSRF token
 	check_csrf_token(request)
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	controls = request.POST.items()
@@ -311,46 +292,42 @@ def settings_feed_post(request):
 	request.session.flash('Your settings have been updated', 'info')
 	return HTTPFound(location=request.route_url('settings_feed'))
 
-@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET')
-@authenticated
+@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET', permission='auth')
 def settings_token_get(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	return { 'user': user, 'form_errors': {} }
 
-@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST')
-@authenticated
+@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST', permission='auth')
 def settings_token_post(request):
 
 	# Check the CSRF token
 	check_csrf_token(request)
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 	user.reset_token()
 
 	request.session.flash('Your token has been reset', 'info')
 	return HTTPFound(location=request.route_url('settings_token'))
 
-@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='GET')
-@authenticated
+@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='GET', permission='auth')
 def settings_pw_get(request):
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	return { 'user': user, 'form_errors': {} }
 
-@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST')
-@authenticated
+@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST', permission='auth')
 def password_post(request):
 
 	# Check the CSRF token
 	check_csrf_token(request)
 
-	uid = request.session.get('user')
+	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
 	controls = request.POST.items()

@@ -10,7 +10,7 @@
 		<h1>Your Episodes <small>upcoming and recent</small></h1>
 	</div>
 
-	<p>Your list of episodes is also available as a <a href="#TODO">web feed</a> and as an <a href="#TODO">iCalendar</a>.</p>
+	<p>Your list of episodes is also available as a <a href="${request.route_url('feed', user=user.name, token=user.token)}">web feed</a> and as an <a href="${request.route_url('ical', user=user.name, token=user.token)}">iCalendar</a>.</p>
 
 	<div class="list-group" tal:define="global prevdate 0">
 		<div tal:repeat="episode episodes" tal:omit-tag="">

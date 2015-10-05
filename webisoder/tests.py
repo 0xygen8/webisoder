@@ -29,6 +29,25 @@ from .views import login, logout, shows, subscribe, unsubscribe, search_post
 from .views import index, episodes, profile_get, profile_post, password_post
 from .views import settings_token_post, settings_feed_post, feed
 
+class WebisoderTest(unittest.TestCase):
+
+	def setUp(self):
+
+		self.config = testing.setUp()
+
+		from pyramid.authorization import ACLAuthorizationPolicy
+		from pyramid.authentication import SessionAuthenticationPolicy
+		authentication_policy = SessionAuthenticationPolicy()
+		authorization_policy = ACLAuthorizationPolicy()
+		self.config.set_authorization_policy(authorization_policy)
+		self.config.set_authentication_policy(authentication_policy)
+
+		self.config.add_route('profile', '__PROFILE__')
+		self.config.add_route('settings_token', '__TOKEN__')
+		self.config.add_route('settings_pw', '__PW__')
+		self.config.add_route('settings_feed', '__FEED__')
+		self.config.add_route('shows', '__SHOWS__')
+
 class WebisoderModelTests(unittest.TestCase):
 
 	def setUp(self):
@@ -236,7 +255,7 @@ class WebisoderModelTests(unittest.TestCase):
 
 		self.assertEqual(ep, ep2)
 
-class TestAuthenticationAndAuthorization(unittest.TestCase):
+class TestAuthenticationAndAuthorization(WebisoderTest):
 
 	def setUp(self):
 
@@ -273,6 +292,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		with self.assertRaises(BadCSRFToken):
 			res = login(request)
 
+
 	def testInvalidUserName(self):
 
 		request = testing.DummyRequest(post={
@@ -282,7 +302,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -298,7 +318,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -312,7 +332,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -328,7 +348,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -344,7 +364,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -358,7 +378,7 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = login(request)
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
 		msg = request.session.pop_flash('warning')
@@ -377,8 +397,8 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
-		self.assertIn('user', request.session)
-		self.assertEqual('testuser100', request.session['user'])
+		self.assertIn('auth.userid', request.session)
+		self.assertEqual('testuser100', request.session['auth.userid'])
 
 		msg = request.session.pop_flash('warning')
 		self.assertEqual(0, len(msg))
@@ -389,19 +409,17 @@ class TestAuthenticationAndAuthorization(unittest.TestCase):
 		res = logout(request)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__HOME__'))
-		self.assertNotIn('user', request.session)
+		self.assertNotIn('auth.userid', request.session)
 
 		msg = request.session.pop_flash('info')
 		self.assertEqual(1, len(msg))
 		self.assertEqual('Successfully signed out. Goodbye.', msg[0])
 
-class TestShowsView(unittest.TestCase):
+class TestShowsView(WebisoderTest):
 
 	def setUp(self):
 
 		super(TestShowsView, self).setUp()
-		self.config = testing.setUp()
-		self.config.add_route('shows', '__SHOWS__')
 
 		engine = create_engine('sqlite://')
 		DBSession.configure(bind=engine)
@@ -454,7 +472,7 @@ class TestShowsView(unittest.TestCase):
 	def testShowList(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = shows(request)
 
 		result_shows = [x.id for x in res['subscribed']]
@@ -466,31 +484,31 @@ class TestShowsView(unittest.TestCase):
 	def testSubscribeShow(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 
 		with self.assertRaises(BadCSRFToken):
 			res = subscribe(request)
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = subscribe(request)
 		self.assertEqual(res.get('error'), 'no show specified')
 
 		request = testing.DummyRequest(post={'show': 'a'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = subscribe(request)
 		self.assertEqual(res.get('error'), 'illegal show id')
 
 		request = testing.DummyRequest(post={'show': '5'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = subscribe(request)
 		self.assertEqual(res.get('error'), 'no such show')
 
 		request = testing.DummyRequest(post={'show': '4'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = subscribe(request)
 		self.assertTrue(hasattr(res, 'location'))
@@ -511,33 +529,33 @@ class TestShowsView(unittest.TestCase):
 	def testUnsubscribeShow(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		with self.assertRaises(BadCSRFToken):
 			res = unsubscribe(request)
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = unsubscribe(request)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': 'a'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = unsubscribe(request)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': '5'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = unsubscribe(request)
 		self.assertTrue(hasattr(res, 'code'))
 		self.assertEqual(res.code, 404)
 
 		request = testing.DummyRequest(post={'show': '3'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = unsubscribe(request)
 		self.assertTrue(hasattr(res, 'location'))
@@ -587,7 +605,7 @@ class TestShowsView(unittest.TestCase):
 					self.ui.selectSeries(self.items[item])
 
 		request = testing.DummyRequest(post={'bla': 'big bang'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		errors = res.get('form_errors')
@@ -599,7 +617,7 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual(search, '')
 
 		request = testing.DummyRequest(post={'search': 'big bang theory'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 1)
 		self.assertEqual(res.get('search'), 'big bang theory')
@@ -611,7 +629,7 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual(search, 'big bang theory')
 
 		request = testing.DummyRequest(post={'search': 'this does not exist'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 0)
 		self.assertIn('form_errors', res)
@@ -620,7 +638,7 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual(search, 'this does not exist')
 
 		request = testing.DummyRequest(post={'search': 'doctor who'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertTrue(len(res.get('shows')) > 5)
 		self.assertIn('form_errors', res)
@@ -629,7 +647,7 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual(search, 'doctor who')
 
 		request = testing.DummyRequest(post={'search': 'do'})
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		self.assertIn('search', res)
@@ -639,7 +657,7 @@ class TestShowsView(unittest.TestCase):
 	def test_episodes(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = episodes(request)
 
 		ep = res.get('episodes', [])
@@ -670,7 +688,7 @@ class TestShowsView(unittest.TestCase):
 	def test_feed(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 		res = feed(request)
 		self.assertEqual(400, res.code)
 
@@ -715,16 +733,11 @@ class TestShowsView(unittest.TestCase):
 		self.assertEqual('ep5', ep[1].title)
 		self.assertEqual('ep2', ep[2].title)
 
-class TestProfileView(unittest.TestCase):
+class TestProfileView(WebisoderTest):
 
 	def setUp(self):
 
 		super(TestProfileView, self).setUp()
-		self.config = testing.setUp()
-		self.config.add_route('profile', '__PROFILE__')
-		self.config.add_route('settings_token', '__TOKEN__')
-		self.config.add_route('settings_pw', '__PW__')
-		self.config.add_route('settings_feed', '__FEED__')
 
 		with transaction.manager:
 
@@ -752,7 +765,7 @@ class TestProfileView(unittest.TestCase):
 	def testGetProfile(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		res = profile_get(request)
 
 		self.assertIn('user', res)
@@ -764,14 +777,14 @@ class TestProfileView(unittest.TestCase):
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
 			res = profile_post(request)
 
 		request = testing.DummyRequest({
 			'email': 'testuser@example.com',
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -783,7 +796,7 @@ class TestProfileView(unittest.TestCase):
 			'email': 'testuser@example.com',
 			'password': 'wrong'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -795,7 +808,7 @@ class TestProfileView(unittest.TestCase):
 			'email': 'testuser@example.com',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -807,7 +820,7 @@ class TestProfileView(unittest.TestCase):
 			'email': '',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -819,7 +832,7 @@ class TestProfileView(unittest.TestCase):
 			'email': 'notaproperaddress',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -828,7 +841,7 @@ class TestProfileView(unittest.TestCase):
 		self.assertIn('email', res.get('form_errors', {}))
 
 		request = testing.DummyRequest({})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -843,7 +856,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
 			res = settings_feed_post(request)
 
@@ -852,7 +865,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -865,7 +878,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -878,7 +891,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -890,7 +903,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -903,7 +916,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -918,7 +931,7 @@ class TestProfileView(unittest.TestCase):
 			'site_news': 'on',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -930,7 +943,7 @@ class TestProfileView(unittest.TestCase):
 			'email': 'testuser@example.com',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -943,7 +956,7 @@ class TestProfileView(unittest.TestCase):
 			'site_news': 'on',
 			'password': 'secret'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = profile_post(request)
 		user = user = DBSession.query(User).get('testuser12')
@@ -958,7 +971,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
@@ -972,7 +985,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -985,7 +998,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -998,7 +1011,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1011,7 +1024,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1024,7 +1037,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1036,7 +1049,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1052,7 +1065,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '0'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1067,7 +1080,7 @@ class TestProfileView(unittest.TestCase):
 			'date_offset': '-1'
 		})
 		request = testing.DummyRequest({'date_offset': '0'})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1081,7 +1094,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '1'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1095,7 +1108,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '2'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1109,7 +1122,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': '3'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1123,7 +1136,7 @@ class TestProfileView(unittest.TestCase):
 			'days_back': '1',
 			'date_offset': 'A'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1136,7 +1149,7 @@ class TestProfileView(unittest.TestCase):
 			'link_format': 'ignore',
 			'days_back': '1'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = settings_feed_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1150,7 +1163,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdf',
 			'verify': 'asdf'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
 			res = password_post(request)
 
@@ -1158,7 +1171,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdf',
 			'verify': 'asdf'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1170,7 +1183,7 @@ class TestProfileView(unittest.TestCase):
 			'current': 'asdf',
 			'verify': 'asdf'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1182,7 +1195,7 @@ class TestProfileView(unittest.TestCase):
 			'current': 'asdf',
 			'new': 'asdf'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1195,7 +1208,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdfgh',
 			'verify': 'asdfgh'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1208,7 +1221,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdfg',
 			'verify': 'asdfg'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1221,7 +1234,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdfgh',
 			'verify': 'asdfghi'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1234,7 +1247,7 @@ class TestProfileView(unittest.TestCase):
 			'new': 'asdfgh',
 			'verify': 'asdfgh'
 		})
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		res = password_post(request)
 		user = DBSession.query(User).get('testuser12')
@@ -1244,7 +1257,7 @@ class TestProfileView(unittest.TestCase):
 	def testResetToken(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser12'
+		request.session['auth.userid'] = 'testuser12'
 
 		user = DBSession.query(User).get('testuser12')
 		token = user.token
@@ -1267,13 +1280,13 @@ class TestProfileView(unittest.TestCase):
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 
-class TestIndexPage(unittest.TestCase):
+class TestIndexPage(WebisoderTest):
 
 	def setUp(self):
 
 		super(TestIndexPage, self).setUp()
-		self.config = testing.setUp()
-		self.config.add_route('shows', '__SHOWS__')
+		#self.config = testing.setUp()
+		#self.config.add_route('shows', '__SHOWS__')
 
 	def tearDown(self):
 
@@ -1289,7 +1302,7 @@ class TestIndexPage(unittest.TestCase):
 	def test_user(self):
 
 		request = testing.DummyRequest()
-		request.session['user'] = 'testuser1'
+		request.session['auth.userid'] = 'testuser1'
 
 		res = index(request)
 		self.assertTrue(hasattr(res, 'location'))

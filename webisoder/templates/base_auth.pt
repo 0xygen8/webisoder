@@ -10,13 +10,13 @@
 			</button>
 			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
 		</div>
-		<div tal:condition="request.session.get('user')" class="navbar-collapse collapse">
+		<div tal:condition="request.authenticated_userid" class="navbar-collapse collapse">
 			<ul metal:define-slot="navitems" class="nav navbar-nav">
 				<li><a href="${request.route_url('shows')}">Shows</a></li>
 				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
-				<p class="navbar-text">Signed in as <a href="${request.route_url('profile')}">${session.get('user')}</a></p>
+				<p class="navbar-text">Signed in as <a href="${request.route_url('profile')}">${request.authenticated_userid}</a></p>
 				<li><a href="${request.route_url('logout')}">Sign out</a></li>
 			</ul>
 		</div>
