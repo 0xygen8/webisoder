@@ -16,10 +16,12 @@
 
 import unittest
 import transaction
+import re
 
 from datetime import date, timedelta
 from pyramid import testing
 from pyramid.exceptions import BadCSRFToken
+from pyramid_mailer import get_mailer
 from sqlalchemy import create_engine
 
 from .models import DBSession
@@ -27,7 +29,7 @@ from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
 from .views import index, episodes, profile_get, profile_post, password_post
-from .views import settings_token_post, settings_feed_post, feed
+from .views import settings_token_post, settings_feed_post, feed, signup_post
 
 class WebisoderTest(unittest.TestCase):
 
@@ -47,6 +49,10 @@ class WebisoderTest(unittest.TestCase):
 		self.config.add_route('settings_pw', '__PW__')
 		self.config.add_route('settings_feed', '__FEED__')
 		self.config.add_route('shows', '__SHOWS__')
+		self.config.add_route('login', '__LOGIN__')
+
+		# Use dummy mailer
+		self.config.include('pyramid_mailer.testing')
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -198,6 +204,14 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertTrue(user.authenticate('letmein'))
 		self.assertNotEqual('', user.salt)
 
+	def test_generate_password(self):
+
+		user = DBSession.query(User).get('user1')
+		password = user.generate_password()
+
+		self.assertEqual(12, len(password))
+		self.assertTrue(user.authenticate(password))
+
 	def test_upgrade_password(self):
 
 		user = DBSession.query(User).get('user1')
@@ -254,6 +268,140 @@ class WebisoderModelTests(unittest.TestCase):
 			ep = show.next_episode
 
 		self.assertEqual(ep, ep2)
+
+class TestNewUserSignup(WebisoderTest):
+
+	def setUp(self):
+
+		super(TestNewUserSignup, self).setUp()
+		self.config.include('pyramid_chameleon')
+
+	def tearDown(self):
+
+		testing.tearDown()
+
+	def testSignup(self):
+
+		request = testing.DummyRequest(post={
+			'name': 'newuser1',
+			'email': 'newuser1@example.org'
+		})
+
+		mailer = get_mailer(request)
+		self.assertEqual(len(mailer.outbox), 0)
+		signup_post(request)
+		self.assertEqual(len(mailer.outbox), 1)
+
+		message = mailer.outbox[0]
+		self.assertEqual(message.subject, 'New user registration')
+		self.assertEqual(message.sender, 'noreply@webisoder.net')
+		self.assertEqual(len(message.recipients), 1)
+		self.assertIn('newuser1@example.org', message.recipients)
+		self.assertIn('newuser1', message.body)
+		self.assertIn('your initial password is', message.body)
+
+		matches = re.findall('[a-zA-Z0-9]{12}', message.body)
+		self.assertEqual(len(matches), 1)
+		password = matches[0]
+
+		user = DBSession.query(User).get('newuser1')
+		self.assertTrue(user.authenticate(password))
+		self.assertEqual(user.mail, 'newuser1@example.org')
+
+	def testInvalidSignupForm(self):
+
+		request = testing.DummyRequest(post={
+			'name': 'newuser3'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+		request = testing.DummyRequest(post={
+			'email': 'newuser3'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+	def testInvalidMailAddress(self):
+
+		request = testing.DummyRequest(post={
+			'name': 'newuser4',
+			'email': 'newuser1'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+		request = testing.DummyRequest(post={
+			'name': 'newuser4',
+			'email': ''
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+		request = testing.DummyRequest(post={
+			'name': 'newuser4',
+			'email': '@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+	def testInvalidUserName(self):
+
+		request = testing.DummyRequest(post={
+			'email': 'newuser1@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+		request = testing.DummyRequest(post={
+			'name': '',
+			'email': 'newuser2@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 0)
+
+	def testDuplicateUser(self):
+
+		request = testing.DummyRequest(post={
+			'name': 'newuserX',
+			'email': 'newuserX@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertNotIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 1)
+
+		request = testing.DummyRequest(post={
+			'name': 'newuserX',
+			'email': 'newuserX1@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 1)
+
+		request = testing.DummyRequest(post={
+			'name': 'newuserY',
+			'email': 'newuserX@example.org'
+		})
+		mailer = get_mailer(request)
+		res = signup_post(request)
+		self.assertIn('form_errors', res)
+		self.assertEqual(len(mailer.outbox), 1)
 
 class TestAuthenticationAndAuthorization(WebisoderTest):
 

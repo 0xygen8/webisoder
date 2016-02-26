@@ -20,17 +20,21 @@ from datetime import date, timedelta, datetime
 
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPUnauthorized
 from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.renderers import render
 from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.session import check_csrf_token
 from pyramid.view import view_config
+
+from pyramid_mailer import get_mailer
+from pyramid_mailer.message import Message
 
 from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
 from .forms import ProfileForm, PasswordForm, FeedSettingsForm, UnsubscribeForm
-from .forms import LoginForm, SearchForm
+from .forms import LoginForm, SearchForm, SignupForm
 
 @decorator
 def securetoken(func, *args, **kwargs):
@@ -90,6 +94,24 @@ def feed(request):
 
 	then = date.today() - timedelta(user.days_back or 0)
 	episodes = [e for e in user.episodes if e.airdate >= then]
+
+	# NEW
+	#from .models import Episode
+
+	#s = Show(name='The Big Bang Theory')
+	#s.updated = datetime.now()
+	#e1 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+	#e1.updated = s.updated
+	#e2 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+	#e2.updated = s.updated
+	#e3 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+	#e3.updated = s.updated
+	#e4 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+	#e4.updated = s.updated
+	#e5 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+	#e5.updated = s.updated
+	#episodes = [e1,e2,e3,e4,e5]
+	# END
 
 	return { 'episodes': episodes, 'user': user, 'now': datetime.now() }
 
@@ -184,6 +206,48 @@ def login(request):
 
 	request.session.flash('Login failed', 'warning')
 	return { 'user': name }
+
+@view_config(route_name='signup', renderer='templates/signup.pt', request_method='GET')
+def signup(request):
+
+	return {}
+
+@view_config(route_name='signup', renderer='templates/signup.pt', request_method='POST')
+def signup_post(request):
+
+	controls = request.POST.items()
+	form = Form(SignupForm())
+
+	try:
+		data = form.validate(controls)
+	except ValidationFailure as e:
+		errors = e.error.asdict()
+		return { 'form_errors': errors }
+
+	name = data.get('name')
+	mail = data.get('email')
+
+	if DBSession.query(User).get(name):
+		return { 'form_errors': 'err' }
+	if DBSession.query(User).filter_by(mail=mail).count() > 0:
+		return { 'form_errors': 'err2' }
+
+	user = User(name=name)
+	password = user.generate_password()
+	user.mail = mail
+	DBSession.add(user)
+
+	mailer = get_mailer(request)
+
+	body=render('templates/mail/signup.pt',
+		{ 'name': name, 'password': password, 'request': request })
+	message = Message(subject='New user registration',
+		sender='noreply@webisoder.net', recipients=[mail],
+		body=body)
+
+	mailer.send(message)
+
+	return {}
 
 @view_config(route_name='search', renderer='templates/search.pt', request_method='POST', permission='auth')
 def search_post(request, tvdb=Tvdb):

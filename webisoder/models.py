@@ -78,6 +78,13 @@ class User(Base):
 		self.token = ''.join(SystemRandom().choice(ascii_uppercase +
 			ascii_lowercase + digits) for _ in range(12))
 
+	def generate_password(self):
+
+		password = ''.join(SystemRandom().choice(ascii_uppercase +
+			ascii_lowercase + digits) for _ in range(12))
+		self.password = password
+		return password
+
 	def __get_episodes(self):
 
 		shows = [x.id for x in self.shows]

@@ -1,0 +1,7 @@
+Hello ${name}
+
+You have recently signed up for a webisoder account. Your account
+has been created, your initial password is ${password}.
+
+You can sign into your new account at ${request.route_url('login')}
+and get started with webisoder now.
