@@ -14,24 +14,23 @@
 	</div>
 </nav>
 
-<div metal:fill-slot="main" class="container">
-	<div class="page-header">
-		<h1>Signup</h1>
-	</div>
-
-	<form method="post" action="${request.route_url('login')}">
+<div metal:fill-slot="main" class="container" tal:define="errors form_errors|{}">
+	<form method="post" action="${request.route_url('signup')}" class="login">
+		<h2 class="login">User registration</h2>
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
-			<label for="inputName">Your user name</label>
-			<input class="form-control" type="text" name="user" id="inputName" placeholder="User name" autofocus required />
+			<div tal:omit-tag="'name' not in errors" class="has-error">
+				<label for="inputName" class="sr-only">Your user name</label>
+				<input class="form-control" type="text" name="name" id="inputName" tal:attributes="value name|None" placeholder="User name" autofocus required />
+				<span class="help-block" tal:condition="'name' in errors">${errors.get('name')}</span>
+			</div>
 		</div>
 		<div class="form-group">
-			<label for="inputName">Your password</label>
-			<input class="form-control" type="password" name="password" placeholder="Password" required />
-		</div>
-		<div class="form-group">
-			<label for="inputName">Verify password</label>
-			<input class="form-control" type="password" name="verifypw" placeholder="Password" required />
+			<div tal:omit-tag="'email' not in errors" class="has-error">
+				<label for="inputName" class="sr-only">Your e-mail addres</label>
+				<input class="form-control" type="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+			</div>
 		</div>
 		<button type="submit" class="btn btn-primary">Sign up</button>
 	</form>

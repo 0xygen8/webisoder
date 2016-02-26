@@ -392,6 +392,9 @@ class TestNewUserSignup(WebisoderTest):
 		mailer = get_mailer(request)
 		res = signup_post(request)
 		self.assertIn('form_errors', res)
+		self.assertIn('name', res.get('form_errors'))
+		self.assertEqual(res.get('name'), 'newuserX')
+		self.assertEqual(res.get('email'), 'newuserX1@example.org')
 		self.assertEqual(len(mailer.outbox), 1)
 
 		request = testing.DummyRequest(post={
@@ -401,6 +404,9 @@ class TestNewUserSignup(WebisoderTest):
 		mailer = get_mailer(request)
 		res = signup_post(request)
 		self.assertIn('form_errors', res)
+		self.assertIn('email', res.get('form_errors'))
+		self.assertEqual(res.get('name'), 'newuserY')
+		self.assertEqual(res.get('email'), 'newuserX@example.org')
 		self.assertEqual(len(mailer.outbox), 1)
 
 class TestAuthenticationAndAuthorization(WebisoderTest):

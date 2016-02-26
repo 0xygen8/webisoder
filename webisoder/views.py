@@ -228,9 +228,12 @@ def signup_post(request):
 	mail = data.get('email')
 
 	if DBSession.query(User).get(name):
-		return { 'form_errors': 'err' }
+		data['form_errors'] = { 'name': 'This name is already taken' }
+		return data
 	if DBSession.query(User).filter_by(mail=mail).count() > 0:
-		return { 'form_errors': 'err2' }
+		data['form_errors'] = { 'email':
+			'A user with this e-mail address already exists' }
+		return data
 
 	user = User(name=name)
 	password = user.generate_password()
@@ -240,7 +243,7 @@ def signup_post(request):
 	mailer = get_mailer(request)
 
 	body=render('templates/mail/signup.pt',
-		{ 'name': name, 'password': password, 'request': request })
+		{ 'name': name, 'password': password }, request=request )
 	message = Message(subject='New user registration',
 		sender='noreply@webisoder.net', recipients=[mail],
 		body=body)
