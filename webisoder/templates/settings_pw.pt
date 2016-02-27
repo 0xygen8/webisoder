@@ -21,29 +21,29 @@
 		</div>
 		<div class="col-sm-10">
 			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Account settings</strong></div>
+				<div class="panel-heading"><strong>Change your password</strong></div>
 				<div class="panel-body">
-					<form method="post" action="${request.route_url('settings_pw')}">
+					<form method="post" action="${request.route_url('settings_pw')}" tal:define="errors form_errors|{}">
 						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
-							<label for="inputOld">Old password</label>
-							<div class="input-group has-error" tal:omit-tag="'current' not in form_errors">
-								<input type="password" name="current" class="form-control" id="inputOld" required />
-								<div tal:omit-tag="'current' not in form_errors" class="input-group-addon">${form_errors.get('current')}</div>
+							<label for="inputOld" class="sr-only">Old password</label>
+							<div class="has-error" tal:omit-tag="'current' not in errors">
+								<input type="password" name="current" class="form-control" id="inputOld" placeholder="Current password" required autofocus />
+								<span class="help-block" tal:omit-tag="'current' not in errors">${errors.get('current')}</span>
 							</div>
 						</div>
 						<div class="form-group">
-							<label for="inputNew">New password</label>
-							<div class="input-group has-error" tal:omit-tag="'new' not in form_errors">
-								<input type="password" name="new" class="form-control" id="inputNew" required />
-								<div tal:omit-tag="'new' not in form_errors" class="input-group-addon">${form_errors.get('new')}</div>
+							<label for="inputNew" class="sr-only">New password</label>
+							<div class="has-error" tal:omit-tag="'new' not in errors">
+								<input type="password" name="new" class="form-control" id="inputNew" placeholder="New password" required />
+								<span class="help-block" tal:omit-tag="'new' not in errors">${errors.get('new')}</span>
 							</div>
 						</div>
 						<div class="form-group">
-							<label for="inputConfirm">Confirm new password</label>
-							<div class="input-group has-error" tal:omit-tag="'verify' not in form_errors">
-								<input type="password" name="verify" class="form-control" id="inputConfirm" required />
-								<div tal:omit-tag="'verify' not in form_errors" class="input-group-addon">${form_errors.get('verify')}</div>
+							<label for="inputConfirm" class="sr-only">Confirm new password</label>
+							<div class="has-error" tal:omit-tag="'verify' not in errors">
+								<input type="password" name="verify" class="form-control" id="inputConfirm" placeholder="Confirm new password" required />
+								<span class="help-block" tal:omit-tag="'verify' not in errors">${errors.get('verify')}</span>
 							</div>
 						</div>
 						<button type="submit" class="btn btn-primary">Update password</button>

@@ -12,3 +12,8 @@ Getting Started
 
 - $VENV/bin/pserve development.ini
 
+
+Running the development mail server
+-----------------------------------
+
+python -m smtpd -n -c DebuggingServer localhost:2525

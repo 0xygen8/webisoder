@@ -23,29 +23,33 @@
 			<div class="panel panel-default">
 				<div class="panel-heading"><strong>Feed settings</strong></div>
 				<div class="panel-body">
-					<form method="post" action="${request.route_url('settings_feed')}">
+					<form method="post" action="${request.route_url('settings_feed')}" tal:define="errors form_errors|{}">
 						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<label for="inputDays">Maximum age</label>
-							<div tal:attributes="class 'input-group has-error' if form_errors.get('days_back') else 'input-group'">
-								<select class="form-control" name="days_back" id="inputDays">
+							<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
+								<select class="form-control" name="days_back" id="inputDays" autofocus>
 									<option tal:repeat="value range(1,8)" tal:attributes="selected user.days_back == value">${value}</option>
 								</select>
 								<div class="input-group-addon">days</div>
-								<div tal:condition="form_errors.get('days_back')" class="input-group-addon">${form_errors.get('days_back')}</div>
+							</div>
+							<div tal:condition="errors.get('days_back')" class="has-error">
+								<span class="help-block">${errors.get('days_back')}</span>
 							</div>
 							<p class="help-block">
 								Episodes which have first been aired more than the number of days specified here in the past will be hidden.
 							</p>
 						</div>
 						<div class="form-group">
-						<label for="inputOffset">Date offset</label>
-							<div tal:attributes="class 'input-group has-error' if form_errors.get('date_offset') else 'input-group'">
+							<label for="inputOffset">Date offset</label>
+							<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
 								<select class="form-control" name="date_offset" id="inputOffset">
 									<option tal:repeat="value range(0,3)" tal:attributes="selected user.date_offset == value">${value}</option>
 								</select>
 								<div class="input-group-addon">days</div>
-								<div tal:condition="form_errors.get('date_offset')" class="input-group-addon">${form_errors.get('date_offset')}</div>
+							</div>
+							<div tal:condition="errors.get('date_offset')" class="has-error">
+								<span class="help-block">${errors.get('date_offset')}</span>
 							</div>
 							<p class="help-block">
 								Entries in your feeds will be shifted by this number of days into the past.
@@ -53,9 +57,9 @@
 						</div>
 						<div class="form-group">
 							<label for="inputFormat">Link format</label>
-							<div tal:omit-tag="'link_format' not in form_errors" class="input-group has-error">
-								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}" required />
-								<div tal:omit-tag="'link_format' not in form_errors" class="input-group-addon">${form_errors.get('link_format')}</div>
+							<div tal:omit-tag="'link_format' not in errors" class="has-error">
+								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}" notrequired />
+								<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
 							</div>
 							<p class="help-block">
 								Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:

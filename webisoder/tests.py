@@ -777,7 +777,7 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual(res.get('search'), 'big bang theory')
 		show = res.get('shows')[0]
 		self.assertEqual(show.get('id'), 80379)
-		self.assertIn('form_errors', res)
+		self.assertNotIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')
 		self.assertEqual(search, 'big bang theory')
@@ -786,7 +786,7 @@ class TestShowsView(WebisoderTest):
 		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 0)
-		self.assertIn('form_errors', res)
+		self.assertNotIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')
 		self.assertEqual(search, 'this does not exist')
@@ -795,7 +795,7 @@ class TestShowsView(WebisoderTest):
 		request.session['auth.userid'] = 'testuser1'
 		res = search_post(request, tvdb=tvdb_mock)
 		self.assertTrue(len(res.get('shows')) > 5)
-		self.assertIn('form_errors', res)
+		self.assertNotIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')
 		self.assertEqual(search, 'doctor who')

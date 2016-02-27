@@ -27,10 +27,12 @@
 						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<p class="help-block">
-								The access token is required to access your feed and your calendar. <strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</strong>
+								The access token is required to access your feed and your calendar.
+							</p>
+							<p class="help-block"><strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</strong>
 							</p>
 						</div>
-						<button type="submit" class="btn btn-danger">Reset token</button>
+						<button type="submit" class="btn btn-danger" autofocus>Reset token</button>
 					</form>
 				</div>
 			</div>

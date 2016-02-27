@@ -278,9 +278,9 @@ def search_post(request, tvdb=Tvdb):
 	try:
 		tv[search]
 	except tvdb_shownotfound:
-		return { 'shows': [], 'search': search, 'form_errors': {} }
+		return { 'shows': [], 'search': search }
 
-	return { 'shows': result, 'search': search, 'form_errors': {} }
+	return { 'shows': result, 'search': search }
 
 @view_config(route_name='logout', request_method='GET', permission='auth')
 def logout(request):
@@ -295,7 +295,7 @@ def profile_get(request):
 	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
-	return { 'user': user, 'form_errors': {} }
+	return { 'user': user }
 
 @view_config(route_name='profile', renderer='templates/profile.pt', request_method='POST', permission='auth')
 def profile_post(request):
@@ -333,7 +333,8 @@ def settings_feed_get(request):
 	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
-	return { 'user': user, 'form_errors': {} }
+	return { 'user': user }
+
 @view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST', permission='auth')
 def settings_feed_post(request):
 
@@ -365,7 +366,7 @@ def settings_token_get(request):
 	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
-	return { 'user': user, 'form_errors': {} }
+	return { 'user': user }
 
 @view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST', permission='auth')
 def settings_token_post(request):
@@ -386,7 +387,7 @@ def settings_pw_get(request):
 	uid = request.authenticated_userid
 	user = DBSession.query(User).get(uid)
 
-	return { 'user': user, 'form_errors': {} }
+	return { 'user': user }
 
 @view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST', permission='auth')
 def password_post(request):

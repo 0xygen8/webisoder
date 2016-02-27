@@ -23,13 +23,13 @@
 			<div class="panel panel-default">
 				<div class="panel-heading"><strong>General settings</strong></div>
 				<div class="panel-body">
-					<form method="post" action="${request.route_url('profile')}">
+					<form method="post" action="${request.route_url('profile')}" tal:define="errors form_errors|{}">
 						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 						<div class="form-group">
 							<label for="inputEmail">Email address</label>
-							<div tal:omit-tag="'email' not in form_errors" class="input-group has-error">
-								<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
-								<div tal:omit-tag="'email' not in form_errors" class="input-group-addon">${form_errors.get('email')}</div>
+							<div tal:omit-tag="'email' not in errors" class="has-error">
+								<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required autofocus />
+								<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
 							</div>
 						</div>
 						<div class="form-group">
@@ -42,9 +42,9 @@
 						</div>
 						<div class="form-group">
 							<label for="inputPassword">Your password</label>
-							<div tal:omit-tag="'password' not in form_errors" class="input-group has-error">
+							<div tal:omit-tag="'password' not in errors" class="has-error">
 								<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
-								<div tal:omit-tag="'password' not in form_errors" class="input-group-addon">${form_errors.get('password')}</div>
+								<span class="help-block" tal:condition="'password' in errors">${errors.get('password')}</span>
 							</div>
 							<p class="help-block">
 								You need to confirm your password to make changes to these settings.
