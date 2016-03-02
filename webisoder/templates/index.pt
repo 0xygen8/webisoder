@@ -42,7 +42,7 @@
 	<div class="container">
 		<h1>Welcome to webisoder</h1>
 		<p>Webisoder is a free online service which informs you about the latest episodes of your favourite TV shows.</p>
-		<p><a class="btn btn-primary btn-lg" href="${request.route_url('signup')}" role="button">Sign up &raquo;</a></p>
+		<p><a class="btn btn-primary btn-lg" href="${request.route_url('register')}" role="button">Sign up &raquo;</a></p>
 	</div>
 </div>
 

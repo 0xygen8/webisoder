@@ -207,13 +207,13 @@ def login(request):
 	request.session.flash('Login failed', 'warning')
 	return { 'user': name }
 
-@view_config(route_name='signup', renderer='templates/signup.pt', request_method='GET')
-def signup(request):
+@view_config(route_name='register', renderer='templates/register.pt', request_method='GET')
+def register(request):
 
 	return {}
 
-@view_config(route_name='signup', renderer='templates/signup.pt', request_method='POST')
-def signup_post(request):
+@view_config(route_name='register', renderer='templates/register.pt', request_method='POST')
+def register_post(request):
 
 	controls = request.POST.items()
 	form = Form(SignupForm())
@@ -242,7 +242,7 @@ def signup_post(request):
 
 	mailer = get_mailer(request)
 
-	body=render('templates/mail/signup.pt',
+	body=render('templates/mail/register.pt',
 		{ 'name': name, 'password': password }, request=request )
 	message = Message(subject='New user registration',
 		sender='noreply@webisoder.net', recipients=[mail],

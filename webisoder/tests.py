@@ -29,7 +29,7 @@ from .models import Base, Show, Episode, User
 
 from .views import login, logout, shows, subscribe, unsubscribe, search_post
 from .views import index, episodes, profile_get, profile_post, password_post
-from .views import settings_token_post, settings_feed_post, feed, signup_post
+from .views import settings_token_post, settings_feed_post, feed, register_post
 
 class WebisoderTest(unittest.TestCase):
 
@@ -287,7 +287,7 @@ class TestNewUserSignup(WebisoderTest):
 
 		mailer = get_mailer(request)
 		self.assertEqual(len(mailer.outbox), 0)
-		signup_post(request)
+		register_post(request)
 		self.assertEqual(len(mailer.outbox), 1)
 
 		message = mailer.outbox[0]
@@ -312,7 +312,7 @@ class TestNewUserSignup(WebisoderTest):
 			'name': 'newuser3'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -320,7 +320,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser3'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -331,7 +331,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser1'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -340,7 +340,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': ''
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -349,7 +349,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': '@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -359,7 +359,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser1@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -368,7 +368,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser2@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -379,7 +379,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertNotIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 1)
 
@@ -388,7 +388,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX1@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertIn('name', res.get('form_errors'))
 		self.assertEqual(res.get('name'), 'newuserX')
@@ -400,7 +400,7 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX@example.org'
 		})
 		mailer = get_mailer(request)
-		res = signup_post(request)
+		res = register_post(request)
 		self.assertIn('form_errors', res)
 		self.assertIn('email', res.get('form_errors'))
 		self.assertEqual(res.get('name'), 'newuserY')

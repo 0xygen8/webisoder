@@ -15,7 +15,7 @@
 </nav>
 
 <div metal:fill-slot="main" class="container" tal:define="errors form_errors|{}">
-	<form method="post" action="${request.route_url('signup')}" class="login">
+	<form method="post" action="${request.route_url('register')}" class="login">
 		<h2 class="login">User registration</h2>
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
