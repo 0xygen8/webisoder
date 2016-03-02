@@ -24,7 +24,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import relationship, backref
 
-from hashlib import md5, sha256
+from hashlib import md5
+from bcrypt import hashpw, gensalt
 
 from zope.sqlalchemy import ZopeTransactionExtension
 
@@ -40,7 +41,6 @@ class User(Base):
 	__tablename__ = 'users'
 	name = Column('user_name', Text(30), primary_key=True)
 	passwd = Column(Text(64))
-	salt = Column(Text)
 	mail = Column(Text(50), unique=True)
 	signup = Column(DateTime)
 	verified = Column(Boolean)
@@ -55,21 +55,23 @@ class User(Base):
 
 	def __set_password(self, plain):
 
-		self.salt = ''.join(SystemRandom().choice(ascii_uppercase +
-			ascii_lowercase + digits) for _ in range(10))
-		self.passwd = sha256((self.salt + plain).encode()).hexdigest()
+		self.passwd = hashpw(plain.encode(), gensalt())
 
 	def authenticate(self, password):
 
-		digest = sha256((self.salt + password).encode()).hexdigest()
+		try:
 
-		if digest == self.passwd:
-			return True
+			digest = hashpw(password.encode(), self.passwd.encode())
 
-		digest = md5(password.encode()).hexdigest()
-		if digest == self.passwd:
-			self.password = password
-			return True
+			if digest == self.passwd:
+				return True
+
+		except ValueError:
+
+			digest = md5(password.encode()).hexdigest()
+			if digest == self.passwd:
+				self.password = password
+				return True
 
 		return False
 

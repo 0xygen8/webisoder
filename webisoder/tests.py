@@ -202,7 +202,6 @@ class WebisoderModelTests(unittest.TestCase):
 		user.password = 'letmein'
 
 		self.assertTrue(user.authenticate('letmein'))
-		self.assertNotEqual('', user.salt)
 
 	def test_generate_password(self):
 
@@ -222,7 +221,6 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertEqual('', user.salt)
 
 		self.assertTrue(user.authenticate('letmein'))
-		self.assertNotEqual('', user.salt)
 		self.assertNotEqual('0d107d09f5bbe40cade3de5c71e9e9b7', user.passwd)
 
 		self.assertTrue(user.authenticate('letmein'))

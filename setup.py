@@ -21,6 +21,7 @@ requires = [
     'decorator',
     'colander',
     'deform',
+    'bcrypt',
     'tvdb_api'
     ]
 
