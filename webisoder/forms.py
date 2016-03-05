@@ -74,4 +74,4 @@ class SignupForm(MappingSchema):
 
 class SearchForm(MappingSchema):
 
-	search = SchemaNode(String(), validator=Length(min=3))
+	search = SchemaNode(String(), validator=Length(min=2))

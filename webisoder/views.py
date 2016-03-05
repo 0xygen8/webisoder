@@ -24,7 +24,7 @@ from pyramid.renderers import render
 from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.session import check_csrf_token
-from pyramid.view import view_config
+from pyramid.view import view_config, view_defaults
 
 from pyramid_mailer import get_mailer
 from pyramid_mailer.message import Message
@@ -39,8 +39,9 @@ from .forms import LoginForm, SearchForm, SignupForm
 @decorator
 def securetoken(func, *args, **kwargs):
 
-	request = args[0]
+	controller = args[0]
 
+	request = controller.request
 	uid = request.matchdict.get('user')
 	token = request.matchdict.get('token')
 
@@ -64,365 +65,417 @@ def index(request):
 
 	return {}
 
-@view_config(route_name='shows', renderer='templates/shows.pt', request_method='GET', permission='auth')
-def shows(request):
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+class WebisoderController(object):
 
-	return {'subscribed': user.shows, 'shows': DBSession.query(Show).all()}
+	def __init__(self, request):
 
-@view_config(route_name='episodes', renderer='templates/episodes.pt', request_method='GET', permission='auth')
-def episodes(request):
+		self.request = request
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+	def redirect(self, destination):
 
-	then = date.today() - timedelta(user.days_back or 0)
-	episodes = [e for e in user.episodes if e.airdate >= then]
+		return HTTPFound(location=self.request.route_url(destination))
 
-	return { 'episodes': episodes, 'user': user }
+	def flash(self, level, text):
 
-@view_config(route_name='feed', renderer='templates/feed.pt', request_method='GET')
-@view_config(route_name='ical', renderer='templates/ical.pt', request_method='GET')
-@view_config(route_name='html', renderer='templates/episodes.pt', request_method='GET')
-@securetoken
-def feed(request):
+		self.request.session.flash(text, level)
 
-	uid = request.matchdict.get('user')
-	user = DBSession.query(User).get(uid)
 
-	then = date.today() - timedelta(user.days_back or 0)
-	episodes = [e for e in user.episodes if e.airdate >= then]
+@view_defaults(renderer='templates/shows.pt', permission='auth')
+class ShowsController(WebisoderController):
 
-	# NEW
-	#from .models import Episode
+	@view_config(route_name='shows', request_method='GET')
+	def get(self):
 
-	#s = Show(name='The Big Bang Theory')
-	#s.updated = datetime.now()
-	#e1 = Episode(show=s, season=1, num=1, airdate=datetime.now())
-	#e1.updated = s.updated
-	#e2 = Episode(show=s, season=1, num=1, airdate=datetime.now())
-	#e2.updated = s.updated
-	#e3 = Episode(show=s, season=1, num=1, airdate=datetime.now())
-	#e3.updated = s.updated
-	#e4 = Episode(show=s, season=1, num=1, airdate=datetime.now())
-	#e4.updated = s.updated
-	#e5 = Episode(show=s, season=1, num=1, airdate=datetime.now())
-	#e5.updated = s.updated
-	#episodes = [e1,e2,e3,e4,e5]
-	# END
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+		shows = DBSession.query(Show).all()
 
-	return { 'episodes': episodes, 'user': user, 'now': datetime.now() }
+		return {'subscribed': user.shows, 'shows': shows }
 
-@view_config(route_name='subscribe', renderer='templates/shows.pt', request_method='POST', permission='auth')
-def subscribe(request):
+	@view_config(route_name='subscribe', request_method='POST')
+	def subscribe(self):
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		# Check the CSRF token
+		check_csrf_token(self.request)
 
-	show_id = request.POST.get('show')
+		show_id = self.request.POST.get('show')
 
-	if not show_id:
-		return { 'error': 'no show specified' }
+		if not show_id:
+			return { 'error': 'no show specified' }
 
-	if not show_id.isdigit():
-		return { 'error': 'illegal show id' }
+		if not show_id.isdigit():
+			return { 'error': 'illegal show id' }
 
-	show = DBSession.query(Show).get(int(show_id))
+		show = DBSession.query(Show).get(int(show_id))
 
-	if not show:
-		return { 'error': 'no such show' }
+		if not show:
+			return { 'error': 'no such show' }
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
-	user.shows.append(show)
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+		user.shows.append(show)
 
-	session = request.session
-	session.flash('Successfully subscribed to "%s"' % show.name, 'info')
-	return HTTPFound(location=request.route_url('shows'))
+		session = self.request.session
+		self.flash('info', 'Subscribed to "%s"' % show.name)
+		return self.redirect('shows')
 
-@view_config(route_name='unsubscribe', renderer='templates/shows.pt', request_method='POST', permission='auth')
-def unsubscribe(request):
+	@view_config(route_name='unsubscribe', request_method='POST')
+	def unsubscribe(self):
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		# Check the CSRF token
+		check_csrf_token(self.request)
 
-	controls = request.POST.items()
-	form = Form(UnsubscribeForm())
+		controls = self.request.POST.items()
+		form = Form(UnsubscribeForm())
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		request.session.flash('Failed to unsubscribe', 'danger')
-		return HTTPFound(location=request.route_url('shows'))
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			self.flash('danger', 'Failed to unsubscribe')
+			return self.redirect('shows')
 
-	show_id = data.get('show', 0)
-	show = DBSession.query(Show).get(show_id)
+		show_id = data.get('show', 0)
+		show = DBSession.query(Show).get(show_id)
 
-	if not show:
-		return HTTPNotFound()
+		if not show:
+			return HTTPNotFound()
 
-	session = request.session
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
-	user.shows.remove(show)
+		session = self.request.session
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+		user.shows.remove(show)
 
-	session.flash('Successfully unsubscribed from "%s"' % show.name, 'info')
-	return HTTPFound(location=request.route_url('shows'))
+		self.flash('info', 'Unsubscribed from "%s"' % show.name)
+		return self.redirect('shows')
 
-@view_config(route_name='login', renderer='templates/login.pt', request_method='GET')
-def login_get(request):
 
-	return { 'user': None }
+@view_defaults(route_name='login', renderer='templates/login.pt')
+class AuthController(WebisoderController):
 
-@view_config(route_name='login', renderer='templates/login.pt', request_method='POST')
-def login(request):
+	@view_config(request_method='GET')
+	def login_get(self):
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		return {}
 
-	controls = request.POST.items()
-	form = Form(LoginForm())
+	@view_config(request_method='POST')
+	def login_post(self):
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		request.session.flash('Login failed', 'warning')
-		return { 'user': None }
+		# Check the CSRF token
+		check_csrf_token(self.request)
 
-	name = data.get('user')
-	password = data.get('password')
+		controls = self.request.POST.items()
+		form = Form(LoginForm())
 
-	user = DBSession.query(User).get(name)
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			self.flash('warning', 'Login failed')
+			return { 'user': None }
 
-	if not user:
-		request.session.flash('Login failed', 'warning')
+		name = data.get('user')
+		password = data.get('password')
+
+		user = DBSession.query(User).get(name)
+
+		if not user:
+			self.flash('warning', 'Login failed')
+			return { 'user': name }
+
+		if user.authenticate(password):
+			self.request.session['auth.userid'] = name
+			return self.redirect('shows')
+
+		self.flash('warning', 'Login failed')
 		return { 'user': name }
 
-	if user.authenticate(password):
-		request.session['auth.userid'] = name
-		return HTTPFound(location=request.route_url('shows'))
+	@view_config(route_name='logout', permission='auth')
+	def logout(self):
 
-	request.session.flash('Login failed', 'warning')
-	return { 'user': name }
+		self.request.session.clear()
+		self.flash('info', 'Successfully signed out. Goodbye.')
+		return self.redirect('home')
 
-@view_config(route_name='register', renderer='templates/register.pt', request_method='GET')
-def register(request):
 
-	return {}
+@view_defaults(route_name='register', renderer='templates/register.pt')
+class RegistrationController(WebisoderController):
 
-@view_config(route_name='register', renderer='templates/register.pt', request_method='POST')
-def register_post(request):
+	@view_config(request_method='GET')
+	def get(self):
 
-	controls = request.POST.items()
-	form = Form(SignupForm())
+		return {}
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		errors = e.error.asdict()
-		return { 'form_errors': errors }
+	@view_config(request_method='POST')
+	def post(self):
 
-	name = data.get('name')
-	mail = data.get('email')
+		controls = self.request.POST.items()
+		form = Form(SignupForm())
 
-	if DBSession.query(User).get(name):
-		data['form_errors'] = { 'name': 'This name is already taken' }
-		return data
-	if DBSession.query(User).filter_by(mail=mail).count() > 0:
-		data['form_errors'] = { 'email':
-			'A user with this e-mail address already exists' }
-		return data
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			errors = e.error.asdict()
+			return { 'form_errors': errors }
 
-	user = User(name=name)
-	password = user.generate_password()
-	user.mail = mail
-	DBSession.add(user)
+		name = data.get('name')
+		mail = data.get('email')
 
-	mailer = get_mailer(request)
+		if DBSession.query(User).get(name):
+			data['form_errors'] = { 'name':
+				'This name is already taken' }
+			return data
+		if DBSession.query(User).filter_by(mail=mail).count() > 0:
+			data['form_errors'] = { 'email':
+				'This e-mail address is already in use' }
+			return data
 
-	body=render('templates/mail/register.pt',
-		{ 'name': name, 'password': password }, request=request )
-	message = Message(subject='New user registration',
-		sender='noreply@webisoder.net', recipients=[mail],
-		body=body)
+		user = User(name=name)
+		password = user.generate_password()
+		user.mail = mail
+		DBSession.add(user)
 
-	mailer.send(message)
+		mailer = get_mailer(self.request)
 
-	return {}
+		body = render(
+			'templates/mail/register.pt',
+			{ 'name': name, 'password': password },
+			request=self.request)
+		message = Message(
+			subject='New user registration',
+			sender='noreply@webisoder.net',
+			recipients=[mail],
+			body=body)
 
-@view_config(route_name='search', renderer='templates/search.pt', request_method='POST', permission='auth')
-def search_post(request, tvdb=Tvdb):
+		mailer.send(message)
 
-	controls = request.POST.items()
-	form = Form(SearchForm())
+		return {}
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		search = request.POST.get('search', '')
-		errors = e.error.asdict()
-		return { 'search': search, 'form_errors': errors, 'shows': [] }
 
-	result = []
-	search = data.get('search')
+@view_defaults(route_name='search', permission='auth')
+class SearchController(WebisoderController):
 
-	class TVDBSearch(BaseUI):
-		def selectSeries(self, allSeries):
-			result.extend(allSeries)
-			return BaseUI.selectSeries(self, allSeries)
+	@view_config(renderer='templates/search.pt', request_method='POST')
+	def post(self, tvdb=Tvdb):
 
-	tv = tvdb(custom_ui=TVDBSearch)
+		controls = self.request.POST.items()
+		form = Form(SearchForm())
 
-	try:
-		tv[search]
-	except tvdb_shownotfound:
-		return { 'shows': [], 'search': search }
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			search = self.request.POST.get('search', '')
+			errors = e.error.asdict()
+			return { 'search': search, 'form_errors': errors }
 
-	return { 'shows': result, 'search': search }
+		result = []
+		search = data.get('search')
 
-@view_config(route_name='logout', request_method='GET', permission='auth')
-def logout(request):
+		class TVDBSearch(BaseUI):
+			def selectSeries(self, allSeries):
+				result.extend(allSeries)
+				return BaseUI.selectSeries(self, allSeries)
 
-	request.session.clear()
-	request.session.flash('Successfully signed out. Goodbye.', 'info')
-	return HTTPFound(location=request.route_url('home'))
+		tv = tvdb(custom_ui=TVDBSearch)
 
-@view_config(route_name='profile', renderer='templates/profile.pt', request_method='GET', permission='auth')
-def profile_get(request):
+		try:
+			tv[search]
+		except tvdb_shownotfound:
+			return { 'search': search }
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		return { 'shows': result, 'search': search }
 
-	return { 'user': user }
 
-@view_config(route_name='profile', renderer='templates/profile.pt', request_method='POST', permission='auth')
-def profile_post(request):
+@view_defaults(request_method='GET')
+class EpisodesController(WebisoderController):
 
-	# Check the CSRF token
-	check_csrf_token(request)
+	def episodes(self, uid):
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		# TODO: remove this
+		#from .models import Episode
 
-	controls = request.POST.items()
-	form = Form(ProfileForm())
+		#s = Show(name='The Big Bang Theory')
+		#s.updated = datetime.now()
+		#e1 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+		#e1.updated = s.updated
+		#e2 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+		#e2.updated = s.updated
+		#e3 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+		#e3.updated = s.updated
+		#e4 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+		#e4.updated = s.updated
+		#e5 = Episode(show=s, season=1, num=1, airdate=datetime.now())
+		#e5.updated = s.updated
+		#episodes = [e1,e2,e3,e4,e5]
+		# END
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		request.session.flash('Failed to update profile', 'danger')
-		return { 'user': user, 'form_errors': e.error.asdict() }
+		user = DBSession.query(User).get(uid)
+		then = date.today() - timedelta(user.days_back or 0)
+		episodes = [e for e in user.episodes if e.airdate >= then]
 
-	if not user.authenticate(data.get('password')):
+		return { 'episodes': episodes, 'user': user }
 
-		request.session.flash('Password change failed', 'danger')
-		msg = 'Wrong password'
-		return { 'user': user, 'form_errors': { 'password': msg } }
+	@view_config(route_name='feed', renderer='templates/feed.pt')
+	@view_config(route_name='ical', renderer='templates/ical.pt')
+	@view_config(route_name='html', renderer='templates/episodes.pt')
+	@securetoken
+	def feed(self):
 
-	user.mail = data.get('email', user.mail)
-	user.site_news = data.get('site_news', user.site_news)
+		uid = self.request.matchdict.get('user')
+		return self.episodes(uid)
 
-	request.session.flash('Your settings have been updated', 'info')
-	return HTTPFound(location=request.route_url('profile'))
+	@view_config(route_name='episodes', renderer='templates/episodes.pt', permission='auth')
+	def get(self):
 
-@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='GET', permission='auth')
-def settings_feed_get(request):
+		uid = self.request.authenticated_userid
+		return self.episodes(uid)
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
 
-	return { 'user': user }
+@view_defaults(permission='auth', route_name='profile')
+class ProfileController(WebisoderController):
 
-@view_config(route_name='settings_feed', renderer='templates/settings_feed.pt', request_method='POST', permission='auth')
-def settings_feed_post(request):
+	@view_config(renderer='templates/profile.pt', request_method='GET')
+	def get(self):
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		return { 'user': user }
 
-	controls = request.POST.items()
-	form = Form(FeedSettingsForm())
+	@view_config(renderer='templates/profile.pt', request_method='POST')
+	def post(self):
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		request.session.flash('Failed to update profile', 'danger')
-		return { 'user': user, 'form_errors': e.error.asdict() }
+		# Check the CSRF token
+		check_csrf_token(self.request)
 
-	user.days_back = data.get('days_back', user.days_back)
-	user.date_offset = data.get('date_offset', user.date_offset)
-	user.link_format = data.get('link_format', user.link_format)
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
 
-	request.session.flash('Your settings have been updated', 'info')
-	return HTTPFound(location=request.route_url('settings_feed'))
+		controls = self.request.POST.items()
+		form = Form(ProfileForm())
 
-@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='GET', permission='auth')
-def settings_token_get(request):
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			self.flash('danger', 'Failed to update profile')
+			return { 'user': user, 'form_errors': e.error.asdict() }
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		if not user.authenticate(data.get('password')):
 
-	return { 'user': user }
+			self.flash('danger', 'Password change failed')
+			msg = 'Wrong password'
+			return {'user': user, 'form_errors': {'password': msg}}
 
-@view_config(route_name='settings_token', renderer='templates/settings_token.pt', request_method='POST', permission='auth')
-def settings_token_post(request):
+		user.mail = data.get('email', user.mail)
+		user.site_news = data.get('site_news', user.site_news)
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		self.flash('info', 'Your settings have been updated')
+		return self.redirect('profile')
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
-	user.reset_token()
+@view_defaults(permission='auth', route_name='settings_feed')
+class FeedSettingsController(WebisoderController):
 
-	request.session.flash('Your token has been reset', 'info')
-	return HTTPFound(location=request.route_url('settings_token'))
+	@view_config(renderer='templates/feed_cfg.pt', request_method='GET')
+	def get(self):
 
-@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='GET', permission='auth')
-def settings_pw_get(request):
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		return { 'user': user }
 
-	return { 'user': user }
+	@view_config(renderer='templates/feed_cfg.pt', request_method='POST')
+	def post(self):
 
-@view_config(route_name='settings_pw', renderer='templates/settings_pw.pt', request_method='POST', permission='auth')
-def password_post(request):
+		# Check the CSRF token
+		check_csrf_token(self.request)
 
-	# Check the CSRF token
-	check_csrf_token(request)
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
 
-	uid = request.authenticated_userid
-	user = DBSession.query(User).get(uid)
+		controls = self.request.POST.items()
+		form = Form(FeedSettingsForm())
 
-	controls = request.POST.items()
-	form = Form(PasswordForm())
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			self.flash('danger', 'Failed to update profile')
+			return { 'user': user, 'form_errors': e.error.asdict() }
 
-	try:
-		data = form.validate(controls)
-	except ValidationFailure as e:
-		request.session.flash('Password change failed', 'danger')
-		return { 'user': user, 'form_errors': e.error.asdict() }
+		user.days_back = data.get('days_back', user.days_back)
+		user.date_offset = data.get('date_offset', user.date_offset)
+		user.link_format = data.get('link_format', user.link_format)
 
-	if not user.authenticate(data.get('current')):
+		self.flash('info', 'Your settings have been updated')
+		return self.redirect('settings_feed')
 
-		request.session.flash('Password change failed', 'danger')
-		msg = 'Wrong password'
-		return { 'user': user, 'form_errors': { 'current': msg } }
+@view_defaults(permission='auth', route_name='settings_token')
+class TokenResetController(WebisoderController):
 
-	if not data.get('verify') == data.get('new'):
+	@view_config(renderer='templates/token.pt', request_method='GET')
+	def get(self):
 
-		request.session.flash('Password change failed', 'danger')
-		msg = 'Passwords to not match'
-		return { 'user': user, 'form_errors': { 'verify': msg } }
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
 
-	user.password = data.get('new')
+		return { 'user': user }
 
-	request.session.flash('Your password has been changed', 'info')
-	return HTTPFound(location=request.route_url('settings_pw'))
+	@view_config(renderer='templates/token.pt', request_method='POST')
+	def post(self):
+
+		# Check the CSRF token
+		check_csrf_token(self.request)
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+		user.reset_token()
+
+		self.flash('info', 'Your token has been reset')
+		return self.redirect('settings_token')
+
+@view_defaults(permission='auth', route_name='settings_pw')
+class PasswordChangeController(WebisoderController):
+
+	@view_config(renderer='templates/settings_pw.pt', request_method='GET')
+	def get(self):
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+
+		return { 'user': user }
+
+	@view_config(renderer='templates/settings_pw.pt', request_method='POST')
+	def post(self):
+
+		# Check the CSRF token
+		check_csrf_token(self.request)
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+
+		controls = self.request.POST.items()
+		form = Form(PasswordForm())
+
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			self.flash('danger', 'Password change failed')
+			return { 'user': user, 'form_errors': e.error.asdict() }
+
+		if not user.authenticate(data.get('current')):
+
+			self.flash('danger', 'Password change failed')
+			msg = 'Wrong password'
+			return { 'user': user, 'form_errors': { 'current': msg } }
+
+		if not data.get('verify') == data.get('new'):
+
+			self.flash('danger', 'Password change failed')
+			msg = 'Passwords to not match'
+			return { 'user': user, 'form_errors': { 'verify': msg } }
+
+		user.password = data.get('new')
+
+		self.flash('info', 'Your password has been changed')
+		return self.redirect('settings_pw')
 
 # TODO remove this
 @view_config(route_name='setup', renderer='templates/empty.pt',

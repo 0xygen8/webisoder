@@ -22,14 +22,17 @@ from datetime import date, timedelta
 from pyramid import testing
 from pyramid.exceptions import BadCSRFToken
 from pyramid_mailer import get_mailer
+from pyramid.authorization import ACLAuthorizationPolicy
+from pyramid.authentication import SessionAuthenticationPolicy
 from sqlalchemy import create_engine
 
 from .models import DBSession
 from .models import Base, Show, Episode, User
 
-from .views import login, logout, shows, subscribe, unsubscribe, search_post
-from .views import index, episodes, profile_get, profile_post, password_post
-from .views import settings_token_post, settings_feed_post, feed, register_post
+from .views import AuthController, RegistrationController, TokenResetController
+from .views import ProfileController, ShowsController, PasswordChangeController
+from .views import FeedSettingsController, SearchController, EpisodesController
+from .views import index
 
 class WebisoderTest(unittest.TestCase):
 
@@ -37,8 +40,6 @@ class WebisoderTest(unittest.TestCase):
 
 		self.config = testing.setUp()
 
-		from pyramid.authorization import ACLAuthorizationPolicy
-		from pyramid.authentication import SessionAuthenticationPolicy
 		authentication_policy = SessionAuthenticationPolicy()
 		authorization_policy = ACLAuthorizationPolicy()
 		self.config.set_authorization_policy(authorization_policy)
@@ -287,7 +288,8 @@ class TestNewUserSignup(WebisoderTest):
 
 		mailer = get_mailer(request)
 		self.assertEqual(len(mailer.outbox), 0)
-		register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertEqual(len(mailer.outbox), 1)
 
 		message = mailer.outbox[0]
@@ -312,7 +314,8 @@ class TestNewUserSignup(WebisoderTest):
 			'name': 'newuser3'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -320,7 +323,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser3'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -331,7 +335,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser1'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -340,7 +345,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': ''
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -349,7 +355,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': '@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -359,7 +366,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser1@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -368,7 +376,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuser2@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 0)
 
@@ -379,7 +388,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertNotIn('form_errors', res)
 		self.assertEqual(len(mailer.outbox), 1)
 
@@ -388,7 +398,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX1@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertIn('name', res.get('form_errors'))
 		self.assertEqual(res.get('name'), 'newuserX')
@@ -400,7 +411,8 @@ class TestNewUserSignup(WebisoderTest):
 			'email': 'newuserX@example.org'
 		})
 		mailer = get_mailer(request)
-		res = register_post(request)
+		ctl = RegistrationController(request)
+		res = ctl.post()
 		self.assertIn('form_errors', res)
 		self.assertIn('email', res.get('form_errors'))
 		self.assertEqual(res.get('name'), 'newuserY')
@@ -442,8 +454,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		})
 
 		with self.assertRaises(BadCSRFToken):
-			res = login(request)
-
+			view = AuthController(request)
+			res = view.login_post()
 
 	def testInvalidUserName(self):
 
@@ -453,7 +465,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -469,7 +482,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -483,7 +497,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			'password': 'wrong'
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -499,7 +514,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -515,7 +531,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -529,7 +546,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			'user': 'testuser100'
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
 		self.assertFalse(hasattr(res, 'location'))
 
@@ -544,7 +562,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			'password': 'secret'
 		})
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = login(request)
+		view = AuthController(request)
+		res = view.login_post()
 
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
@@ -558,7 +577,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		msg = request.session.pop_flash('info')
 		self.assertEqual(0, len(msg))
 
-		res = logout(request)
+		res = view.logout()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__HOME__'))
 		self.assertNotIn('auth.userid', request.session)
@@ -625,7 +644,8 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
-		res = shows(request)
+		ctl = ShowsController(request)
+		res = ctl.get()
 
 		result_shows = [x.id for x in res['subscribed']]
 		self.assertIn(1, result_shows)
@@ -639,38 +659,44 @@ class TestShowsView(WebisoderTest):
 		request.session['auth.userid'] = 'testuser1'
 
 		with self.assertRaises(BadCSRFToken):
-			res = subscribe(request)
+			ctl = ShowsController(request)
+			res = ctl.subscribe()
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = subscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.subscribe()
 		self.assertEqual(res.get('error'), 'no show specified')
 
 		request = testing.DummyRequest(post={'show': 'a'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = subscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.subscribe()
 		self.assertEqual(res.get('error'), 'illegal show id')
 
 		request = testing.DummyRequest(post={'show': '5'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = subscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.subscribe()
 		self.assertEqual(res.get('error'), 'no such show')
 
 		request = testing.DummyRequest(post={'show': '4'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = subscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.subscribe()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		msg = request.session.pop_flash('info')
 		self.assertEqual(1, len(msg))
-		self.assertEqual('Successfully subscribed to "show4"', msg[0])
+		self.assertEqual('Subscribed to "show4"', msg[0])
 
-		res = shows(request)
+		ctl = ShowsController(request)
+		res = ctl.get()
 
 		result_shows = [x.id for x in res['subscribed']]
 		self.assertIn(1, result_shows)
@@ -683,41 +709,47 @@ class TestShowsView(WebisoderTest):
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
 		with self.assertRaises(BadCSRFToken):
-			res = unsubscribe(request)
+			ctl = ShowsController(request)
+			res = ctl.unsubscribe()
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = unsubscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.unsubscribe()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': 'a'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = unsubscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.unsubscribe()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		request = testing.DummyRequest(post={'show': '5'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = unsubscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.unsubscribe()
 		self.assertTrue(hasattr(res, 'code'))
 		self.assertEqual(res.code, 404)
 
 		request = testing.DummyRequest(post={'show': '3'})
 		request.session['auth.userid'] = 'testuser1'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = unsubscribe(request)
+		ctl = ShowsController(request)
+		res = ctl.unsubscribe()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
 
 		msg = request.session.pop_flash('info')
 		self.assertEqual(1, len(msg))
-		self.assertEqual('Successfully unsubscribed from "show3"', msg[0])
+		self.assertEqual('Unsubscribed from "show3"', msg[0])
 
-		res = shows(request)
+		ctl = ShowsController(request)
+		res = ctl.get()
 
 		result_shows = [x.id for x in res['subscribed']]
 		self.assertIn(1, result_shows)
@@ -758,7 +790,8 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest(post={'bla': 'big bang'})
 		request.session['auth.userid'] = 'testuser1'
-		res = search_post(request, tvdb=tvdb_mock)
+		ctl = SearchController(request)
+		res = ctl.post(tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		errors = res.get('form_errors')
 		self.assertIn('search', errors)
@@ -770,7 +803,8 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest(post={'search': 'big bang theory'})
 		request.session['auth.userid'] = 'testuser1'
-		res = search_post(request, tvdb=tvdb_mock)
+		ctl = SearchController(request)
+		res = ctl.post(tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 1)
 		self.assertEqual(res.get('search'), 'big bang theory')
 		show = res.get('shows')[0]
@@ -782,7 +816,8 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest(post={'search': 'this does not exist'})
 		request.session['auth.userid'] = 'testuser1'
-		res = search_post(request, tvdb=tvdb_mock)
+		ctl = SearchController(request)
+		res = ctl.post(tvdb=tvdb_mock)
 		self.assertEqual(len(res.get('shows')), 0)
 		self.assertNotIn('form_errors', res)
 		self.assertIn('search', res)
@@ -791,26 +826,29 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest(post={'search': 'doctor who'})
 		request.session['auth.userid'] = 'testuser1'
-		res = search_post(request, tvdb=tvdb_mock)
+		ctl = SearchController(request)
+		res = ctl.post(tvdb=tvdb_mock)
 		self.assertTrue(len(res.get('shows')) > 5)
 		self.assertNotIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')
 		self.assertEqual(search, 'doctor who')
 
-		request = testing.DummyRequest(post={'search': 'do'})
+		request = testing.DummyRequest(post={'search': 'd'})
 		request.session['auth.userid'] = 'testuser1'
-		res = search_post(request, tvdb=tvdb_mock)
+		ctl = SearchController(request)
+		res = ctl.post(tvdb=tvdb_mock)
 		self.assertIn('form_errors', res)
 		self.assertIn('search', res)
 		search = res.get('search')
-		self.assertEqual(search, 'do')
+		self.assertEqual(search, 'd')
 
 	def test_episodes(self):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
-		res = episodes(request)
+		ctl = EpisodesController(request)
+		res = ctl.get()
 
 		ep = res.get('episodes', [])
 		self.assertEqual(2, len(ep))
@@ -821,7 +859,8 @@ class TestShowsView(WebisoderTest):
 		# 1 day back
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 1
-		res = episodes(request)
+		ctl = EpisodesController(request)
+		res = ctl.get()
 
 		ep = res.get('episodes', [])
 		self.assertEqual(2, len(ep))
@@ -829,7 +868,8 @@ class TestShowsView(WebisoderTest):
 		# 2 days back
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 2
-		res = episodes(request)
+		ctl = EpisodesController(request)
+		res = ctl.get()
 		ep = res.get('episodes', [])
 		self.assertEqual(3, len(ep))
 
@@ -841,24 +881,28 @@ class TestShowsView(WebisoderTest):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 		self.assertEqual(400, res.code)
 
 		request = testing.DummyRequest()
 		request.matchdict['user'] = 'testuser1'
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 		self.assertEqual(401, res.code)
 
 		request = testing.DummyRequest()
 		request.matchdict['user'] = 'testuser1'
 		request.matchdict['token'] = 'wrong'
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 		self.assertEqual(401, res.code)
 
 		request = testing.DummyRequest()
 		request.matchdict['user'] = 'testuser1'
 		request.matchdict['token'] = 'mytoken'
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 
 		ep = res.get('episodes', [])
 		self.assertEqual(2, len(ep))
@@ -869,7 +913,8 @@ class TestShowsView(WebisoderTest):
 		# 1 day back
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 1
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 
 		ep = res.get('episodes', [])
 		self.assertEqual(2, len(ep))
@@ -877,7 +922,8 @@ class TestShowsView(WebisoderTest):
 		# 2 days back
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 2
-		res = feed(request)
+		ctl = EpisodesController(request)
+		res = ctl.feed()
 		ep = res.get('episodes', [])
 		self.assertEqual(3, len(ep))
 
@@ -918,7 +964,8 @@ class TestProfileView(WebisoderTest):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser12'
-		res = profile_get(request)
+		ctl = ProfileController(request)
+		res = ctl.get()
 
 		self.assertIn('user', res)
 		user = res.get('user')
@@ -931,14 +978,17 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
-			res = profile_post(request)
+			ctl = ProfileController(request)
+			res = ctl.post()
 
 		request = testing.DummyRequest({
+
 			'email': 'testuser@example.com',
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		errors = res.get('form_errors', {})
@@ -950,7 +1000,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		errors = res.get('form_errors', {})
@@ -962,7 +1013,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('testuser@example.com', user.mail)
 		self.assertTrue(hasattr(res, 'location'))
@@ -974,7 +1026,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('testuser@example.com', user.mail)
 		self.assertIn('form_errors', res)
@@ -986,7 +1039,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('testuser@example.com', user.mail)
 		self.assertIn('form_errors', res)
@@ -995,7 +1049,8 @@ class TestProfileView(WebisoderTest):
 		request = testing.DummyRequest({})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('testuser@example.com', user.mail)
 		self.assertIn('form_errors', res)
@@ -1010,7 +1065,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
-			res = settings_feed_post(request)
+			ctl = FeedSettingsController(request)
+			res = ctl.post()
 
 		request = testing.DummyRequest({
 			'link_format': 'http://www.example.com/',
@@ -1019,7 +1075,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1032,7 +1089,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -1045,7 +1103,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -1057,7 +1116,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('http://www.example.com/', user.link_format)
 		self.assertIn('form_errors', res)
@@ -1070,7 +1130,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertEqual('https://www.example.com/', user.link_format)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1085,7 +1146,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__PROFILE__'))
@@ -1097,7 +1159,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__PROFILE__'))
@@ -1110,7 +1173,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = profile_post(request)
+		ctl = ProfileController(request)
+		res = ctl.post()
 		user = user = DBSession.query(User).get('testuser12')
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__PROFILE__'))
@@ -1126,7 +1190,8 @@ class TestProfileView(WebisoderTest):
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(6, user.days_back)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1139,7 +1204,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1152,7 +1218,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -1165,7 +1232,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -1178,7 +1246,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -1191,7 +1260,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -1203,7 +1273,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(7, user.days_back)
 		self.assertIn('form_errors', res)
@@ -1219,7 +1290,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(0, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1234,7 +1306,8 @@ class TestProfileView(WebisoderTest):
 		request = testing.DummyRequest({'date_offset': '0'})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(0, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -1248,7 +1321,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(1, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1262,7 +1336,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertTrue(hasattr(res, 'location'))
@@ -1276,7 +1351,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -1290,7 +1366,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -1303,7 +1380,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = settings_feed_post(request)
+		ctl = FeedSettingsController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertEqual(2, user.date_offset)
 		self.assertIn('form_errors', res)
@@ -1317,7 +1395,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		with self.assertRaises(BadCSRFToken):
-			res = password_post(request)
+			ctl = PasswordChangeController(request)
+			res = ctl.post()
 
 		request = testing.DummyRequest({
 			'new': 'asdf',
@@ -1325,7 +1404,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('current', res.get('form_errors', {}))
@@ -1337,7 +1417,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('new', res.get('form_errors', {}))
@@ -1349,7 +1430,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('verify', res.get('form_errors', {}))
@@ -1362,7 +1444,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('current', res.get('form_errors', {}))
@@ -1375,7 +1458,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('new', res.get('form_errors', {}))
@@ -1388,7 +1472,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertIn('form_errors', res)
 		self.assertIn('verify', res.get('form_errors', {}))
@@ -1401,7 +1486,8 @@ class TestProfileView(WebisoderTest):
 		})
 		request.session['auth.userid'] = 'testuser12'
 		request.params['csrf_token'] = request.session.get_csrf_token()
-		res = password_post(request)
+		ctl = PasswordChangeController(request)
+		res = ctl.post()
 		user = DBSession.query(User).get('testuser12')
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__PW__'))
@@ -1415,18 +1501,21 @@ class TestProfileView(WebisoderTest):
 		token = user.token
 
 		with self.assertRaises(BadCSRFToken):
-			res = settings_token_post(request)
+			ctl = TokenResetController(request)
+			res = ctl.post()
 
 		request.params['csrf_token'] = request.session.get_csrf_token()
 
-		res = settings_token_post(request)
+		ctl = TokenResetController(request)
+		res = ctl.post()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__TOKEN__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 		token = user.token
 
-		res = settings_token_post(request)
+		ctl = TokenResetController(request)
+		res = ctl.post()
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__TOKEN__'))
 		user = DBSession.query(User).get('testuser12')
@@ -1437,8 +1526,6 @@ class TestIndexPage(WebisoderTest):
 	def setUp(self):
 
 		super(TestIndexPage, self).setUp()
-		#self.config = testing.setUp()
-		#self.config.add_route('shows', '__SHOWS__')
 
 	def tearDown(self):
 
@@ -1459,22 +1546,3 @@ class TestIndexPage(WebisoderTest):
 		res = index(request)
 		self.assertTrue(hasattr(res, 'location'))
 		self.assertTrue(res.location.endswith('__SHOWS__'))
-
-class TestMyViewFailureCondition(object):
-
-	def setUp(self):
-
-		super(TestAuthenticationAndAuthorization, self).setUp()
-		self.config = testing.setUp()
-		engine = create_engine('sqlite://')
-		DBSession.configure(bind=engine)
-
-	def tearDown(self):
-		DBSession.remove()
-		testing.tearDown()
-
-	def test_failing_view(self):
-		from .views import my_view
-		request = testing.DummyRequest()
-		info = my_view(request)
-		self.assertEqual(info.status_int, 500)

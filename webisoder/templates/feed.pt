@@ -4,12 +4,12 @@
     ${setattr(request.response,'content_type', 'application/atom+xml')}
 </tal:setHeader>
 
-<feed xmlns="http://www.w3.org/2005/Atom">
+<feed xmlns="http://www.w3.org/2005/Atom" tal:define="datetime import:datetime">
 	<title>Webisoder feed for ${user.name}</title>
 	<subtitle>All your upcoming TV episodes</subtitle>
 	<link href="http://www.webisoder.net/"/>
 	<link rel="self" href="http://www.webisoder.net/atom/${user.name}/${user.token}"/>
-	<updated>${now.strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
+	<updated>${datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
 	<author>
 		<name>webisoder</name>
 	</author>

@@ -10,7 +10,7 @@
 		<h1>Search results</h1>
 	</div>
 
-	<div class="panel panel-default">
+	<div class="panel panel-default" tal:define="shows shows|None">
 		<div class="panel-heading">
 			<form class="form-inline" method="post" action="${request.route_url('search')}" tal:define="errors form_errors|{}">
 				<div tal:condition="'search' in errors" class="alert alert-danger" role="alert">
