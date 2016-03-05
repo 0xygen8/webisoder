@@ -55,12 +55,12 @@
 		</div>
 		<div class="col-md-4">
 			<h2>TV data</h2>
-			<p>Webisoder uses data from <a href="http://thetvdb.com/">TheTVDB.com</a>. If you find this site useful at all please consider <a href="http://thetvdb.com/donate/">donating to TheTVDB</a> to show your support.</p>
+			<p>Webisoder uses data from <a href="http://thetvdb.com/">TheTVDB.com</a>. If you find this site useful at all please consider <a href="http://thetvdb.com/donate/">donating to TheTVDB</a> to show your support and allow them to keep up the good work.</p>
 			<p><a class="btn btn-default" href="http://thetvdb.com/donate/" role="button">Support TheTVDB &raquo;</a></p>
 		</div>
 		<div class="col-md-4">
 			<h2>Free software</h2>
-			<p>Webisoder is <a href="https://en.wikipedia.org/wiki/Free_software">free software</a> available under the terms of the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License</a>. Free software helps you protect your <a href="https://www.fsf.org/campaigns/surveillance">freedom and privacy</a>.</p>
+			<p>Webisoder is <a href="https://en.wikipedia.org/wiki/Free_software">free software</a> available under the terms of the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License</a>. Free software helps you protect your <a href="https://www.fsf.org/campaigns/surveillance">freedom and privacy</a> and generally makes the world a better place.</p>
 			<p><a class="btn btn-default" href="https://github.com/cockroach" role="button">View project details &raquo;</a></p>
 		</div>
 	</div>

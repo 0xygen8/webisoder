@@ -16,17 +16,30 @@
 
 <div metal:fill-slot="main" class="container">
 	<form method="post" action="${request.route_url('login')}" class="login">
-		<h2>Login</h2>
-		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-		<div class="form-group">
-			<label for="inputName" class="sr-only">Your user name</label>
-			<input class="form-control" type="text" name="user" id="inputName" placeholder="User name" value="${user|''}" autofocus required />
+		<div class="panel panel-default">
+			<div class="panel-heading">Webisoder login</div>
+			<div class="panel-body">
+				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+				<div class="form-group">
+					<label for="inputName" class="sr-only">Your user name</label>
+					<div class="input-group">
+						<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>
+						<input class="form-control" type="text" name="user" id="inputName" placeholder="User name" value="${user|''}" autofocus required />
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="inputName" class="sr-only">Your password</label>
+					<div class="input-group">
+						<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
+						<input class="form-control" type="password" name="password" placeholder="Password" required />
+					</div>
+				</div>
+				<button type="submit" class="btn btn-primary">Sign in</button>
+			</div>
+			<div class="panel-footer">
+				<a href="${request.route_url('register')}">Create account</a> or <a href="${request.route_url('register')}">reset password</a>
+			</div>
 		</div>
-		<div class="form-group">
-			<label for="inputName" class="sr-only">Your password</label>
-			<input class="form-control" type="password" name="password" placeholder="Password" required />
-		</div>
-		<button type="submit" class="btn btn-primary">Sign in</button>
 	</form>
 </div>
 
