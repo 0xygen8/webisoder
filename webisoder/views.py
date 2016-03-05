@@ -81,7 +81,7 @@ class WebisoderController(object):
 		self.request.session.flash(text, level)
 
 
-@view_defaults(renderer='templates/shows.pt', permission='auth')
+@view_defaults(renderer='templates/shows.pt', permission='view')
 class ShowsController(WebisoderController):
 
 	@view_config(route_name='shows', request_method='GET')
@@ -189,7 +189,7 @@ class AuthController(WebisoderController):
 		self.flash('warning', 'Login failed')
 		return { 'user': name }
 
-	@view_config(route_name='logout', permission='auth')
+	@view_config(route_name='logout', permission='view')
 	def logout(self):
 
 		self.request.session.clear()
@@ -251,7 +251,7 @@ class RegistrationController(WebisoderController):
 		return {}
 
 
-@view_defaults(route_name='search', permission='auth')
+@view_defaults(route_name='search', permission='view')
 class SearchController(WebisoderController):
 
 	@view_config(renderer='templates/search.pt', request_method='POST')
@@ -323,14 +323,14 @@ class EpisodesController(WebisoderController):
 		uid = self.request.matchdict.get('user')
 		return self.episodes(uid)
 
-	@view_config(route_name='episodes', renderer='templates/episodes.pt', permission='auth')
+	@view_config(route_name='episodes', renderer='templates/episodes.pt', permission='view')
 	def get(self):
 
 		uid = self.request.authenticated_userid
 		return self.episodes(uid)
 
 
-@view_defaults(permission='auth', route_name='profile')
+@view_defaults(permission='view', route_name='profile')
 class ProfileController(WebisoderController):
 
 	@view_config(renderer='templates/profile.pt', request_method='GET')
@@ -371,7 +371,7 @@ class ProfileController(WebisoderController):
 		self.flash('info', 'Your settings have been updated')
 		return self.redirect('profile')
 
-@view_defaults(permission='auth', route_name='settings_feed')
+@view_defaults(permission='view', route_name='settings_feed')
 class FeedSettingsController(WebisoderController):
 
 	@view_config(renderer='templates/feed_cfg.pt', request_method='GET')
@@ -407,7 +407,7 @@ class FeedSettingsController(WebisoderController):
 		self.flash('info', 'Your settings have been updated')
 		return self.redirect('settings_feed')
 
-@view_defaults(permission='auth', route_name='settings_token')
+@view_defaults(permission='view', route_name='settings_token')
 class TokenResetController(WebisoderController):
 
 	@view_config(renderer='templates/token.pt', request_method='GET')
@@ -431,7 +431,7 @@ class TokenResetController(WebisoderController):
 		self.flash('info', 'Your token has been reset')
 		return self.redirect('settings_token')
 
-@view_defaults(permission='auth', route_name='settings_pw')
+@view_defaults(permission='view', route_name='settings_pw')
 class PasswordChangeController(WebisoderController):
 
 	@view_config(renderer='templates/settings_pw.pt', request_method='GET')
