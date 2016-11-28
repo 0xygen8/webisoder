@@ -246,9 +246,17 @@ class RegistrationController(WebisoderController):
 			recipients=[mail],
 			body=body)
 
-		mailer.send(message)
+		try:
+			mailer.send_immediately(message, fail_silently=False)
+		except Exception as e:
+			DBSession.rollback()
+			self.flash("danger", "Failed to send message. Your "
+				"account was not created.")
+			return { "name": name, "email": mail }
 
-		return {}
+		self.flash('info', 'Your account has been created and your '
+			'initial password was sent to %s' % (mail))
+		return self.redirect('login')
 
 
 @view_defaults(route_name='search', permission='view')
