@@ -9,7 +9,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
 requires = [
-    'pyramid',
+    'pyramid >= 1.7',
     'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'pyramid_tm',

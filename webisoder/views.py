@@ -1,5 +1,5 @@
 # webisoder
-# Copyright (C) 2006-2015  Stefan Ott
+# Copyright (C) 2006-2016  Stefan Ott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -16,20 +16,16 @@
 
 from decorator import decorator
 from deform import Form, ValidationFailure
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound, HTTPUnauthorized
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.renderers import render
-from pyramid.response import Response
-from pyramid.security import remember, forget
-from pyramid.session import check_csrf_token
 from pyramid.view import view_config, view_defaults
 
 from pyramid_mailer import get_mailer
 from pyramid_mailer.message import Message
 
-from sqlalchemy.exc import DBAPIError
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
@@ -93,11 +89,8 @@ class ShowsController(WebisoderController):
 
 		return {'subscribed': user.shows, 'shows': shows }
 
-	@view_config(route_name='subscribe', request_method='POST')
+	@view_config(route_name='subscribe', request_method='POST', require_csrf=True)
 	def subscribe(self):
-
-		# Check the CSRF token
-		check_csrf_token(self.request)
 
 		show_id = self.request.POST.get('show')
 
@@ -116,22 +109,18 @@ class ShowsController(WebisoderController):
 		user = DBSession.query(User).get(uid)
 		user.shows.append(show)
 
-		session = self.request.session
 		self.flash('info', 'Subscribed to "%s"' % show.name)
 		return self.redirect('shows')
 
 	@view_config(route_name='unsubscribe', request_method='POST')
 	def unsubscribe(self):
 
-		# Check the CSRF token
-		check_csrf_token(self.request)
-
 		controls = self.request.POST.items()
 		form = Form(UnsubscribeForm())
 
 		try:
 			data = form.validate(controls)
-		except ValidationFailure as e:
+		except ValidationFailure:
 			self.flash('danger', 'Failed to unsubscribe')
 			return self.redirect('shows')
 
@@ -141,7 +130,6 @@ class ShowsController(WebisoderController):
 		if not show:
 			return HTTPNotFound()
 
-		session = self.request.session
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 		user.shows.remove(show)
@@ -161,15 +149,12 @@ class AuthController(WebisoderController):
 	@view_config(request_method='POST')
 	def login_post(self):
 
-		# Check the CSRF token
-		check_csrf_token(self.request)
-
 		controls = self.request.POST.items()
 		form = Form(LoginForm())
 
 		try:
 			data = form.validate(controls)
-		except ValidationFailure as e:
+		except ValidationFailure:
 			self.flash('warning', 'Login failed')
 			return { 'user': None }
 
@@ -352,9 +337,6 @@ class ProfileController(WebisoderController):
 	@view_config(renderer='templates/profile.pt', request_method='POST')
 	def post(self):
 
-		# Check the CSRF token
-		check_csrf_token(self.request)
-
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 
@@ -393,9 +375,6 @@ class FeedSettingsController(WebisoderController):
 	@view_config(renderer='templates/feed_cfg.pt', request_method='POST')
 	def post(self):
 
-		# Check the CSRF token
-		check_csrf_token(self.request)
-
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 
@@ -429,9 +408,6 @@ class TokenResetController(WebisoderController):
 	@view_config(renderer='templates/token.pt', request_method='POST')
 	def post(self):
 
-		# Check the CSRF token
-		check_csrf_token(self.request)
-
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 		user.reset_token()
@@ -452,9 +428,6 @@ class PasswordChangeController(WebisoderController):
 
 	@view_config(renderer='templates/settings_pw.pt', request_method='POST')
 	def post(self):
-
-		# Check the CSRF token
-		check_csrf_token(self.request)
 
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
@@ -518,4 +491,3 @@ might be caused by one of the following things:
 After you fix the problem, please restart the Pyramid application to
 try it again.
 """
-

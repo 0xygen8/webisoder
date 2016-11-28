@@ -39,6 +39,7 @@ def main(global_config, **settings):
 	authentication_policy = SessionAuthenticationPolicy()
 	authorization_policy = ACLAuthorizationPolicy()
 
+	config.set_default_csrf_options(require_csrf=True)
 	config.set_authentication_policy(authentication_policy)
 	config.set_authorization_policy(authorization_policy)
 	config.add_forbidden_view(redirect_login)
