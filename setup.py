@@ -22,7 +22,8 @@ requires = [
     'colander',
     'deform',
     'bcrypt',
-    'tvdb_api'
+    'tvdb_api',
+    'repoze.sendmail == 4.1'
     ]
 
 setup(name='webisoder',
