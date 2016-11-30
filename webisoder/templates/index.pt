@@ -61,7 +61,7 @@
 		<div class="col-md-4">
 			<h2>Free software</h2>
 			<p>Webisoder is <a href="https://en.wikipedia.org/wiki/Free_software">free software</a> available under the terms of the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero General Public License</a>. Free software helps you protect your <a href="https://www.fsf.org/campaigns/surveillance">freedom and privacy</a> and generally makes the world a better place.</p>
-			<p><a class="btn btn-default" href="https://github.com/cockroach" role="button">View project details &raquo;</a></p>
+			<p><a class="btn btn-default" href="https://github.com/cockroach/webisoder" role="button">View project details &raquo;</a></p>
 		</div>
 	</div>
 </div>
