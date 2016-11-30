@@ -53,6 +53,7 @@
 		</table>
 		<div class="panel-body">
 			<form class="form-inline" method="post" action="${request.route_url('search')}">
+				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 				<div class="form-group">
 					<label class="sr-only" for="searchShow">Show name</label>
 					<div class="input-group">
