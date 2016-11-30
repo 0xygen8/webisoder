@@ -31,7 +31,7 @@ from .models import Base, Show, Episode, User
 from .views import AuthController, RegistrationController, TokenResetController
 from .views import ProfileController, ShowsController, PasswordChangeController
 from .views import FeedSettingsController, SearchController, EpisodesController
-from .views import PasswordResetController, index
+from .views import index
 
 class MockUser(object):
 
@@ -445,6 +445,12 @@ class TestNewUserSignup(WebisoderTest):
 		self.assertEqual(res.get('name'), 'newuserY')
 		self.assertEqual(res.get('email'), 'newuserX@example.org')
 		self.assertEqual(len(mailer.outbox), 1)
+
+class TestRecoverPassword(WebisoderTest):
+
+	def testToDo(self):
+
+		self.assertFalse(True)
 
 class TestAuthenticationAndAuthorization(WebisoderTest):
 
