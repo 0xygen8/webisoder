@@ -31,7 +31,33 @@ from .models import Base, Show, Episode, User
 from .views import AuthController, RegistrationController, TokenResetController
 from .views import ProfileController, ShowsController, PasswordChangeController
 from .views import FeedSettingsController, SearchController, EpisodesController
-from .views import index
+from .views import PasswordResetController, index
+
+class MockUser(object):
+
+	@staticmethod
+	def mockAuthentication():
+
+		def setUnhashedPassword(self, plain):
+
+			#print("SET PASSWORD")
+			self.passwd = plain
+
+		def authenticateUnhashed(self, password):
+
+			#print("AUTHENTICATE")
+			return password == self.passwd
+
+		User.origPassword = User.password
+		User.origAuth = User.authenticate
+		User.password = property(None, setUnhashedPassword)
+		User.authenticate = authenticateUnhashed
+
+	@staticmethod
+	def resetAuthentication():
+
+		User.password = User.origPassword
+		User.authenticate = User.origAuth
 
 class WebisoderTest(unittest.TestCase):
 
@@ -85,7 +111,7 @@ class WebisoderModelTests(unittest.TestCase):
 		DBSession.remove()
 		testing.tearDown()
 
-	def test_user_token(self):
+	def testUserToken(self):
 
 		user1 = DBSession.query(User).get('user1')
 		user1.token = 'token'
@@ -99,7 +125,7 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertNotEqual(token, user1.token)
 		self.assertEqual(12, len(token))
 
-	def test_show_episode_relation(self):
+	def testShowEpisodeRelation(self):
 
 		show1 = DBSession.query(Show).get(1)
 		show2 = DBSession.query(Show).get(2)
@@ -124,7 +150,7 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertEqual(s1e2.show, show1)
 		self.assertEqual(s2e1.show, show2)
 
-	def test_subscriptions(self):
+	def testSubscriptions(self):
 
 		user1 = DBSession.query(User).get('user1')
 		user2 = DBSession.query(User).get('user2')
@@ -161,7 +187,7 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertNotIn(user2, show2.users)
 		self.assertIn(user3, show2.users)
 
-	def test_user_episodes(self):
+	def testUserEpisodes(self):
 
 		user1 = DBSession.query(User).get('user1')
 		user2 = DBSession.query(User).get('user2')
@@ -195,7 +221,7 @@ class WebisoderModelTests(unittest.TestCase):
 		user3.shows.remove(show1)
 		self.assertEqual(1, len(user3.episodes))
 
-	def test_authentication(self):
+	def testAuthentication(self):
 
 		user = DBSession.query(User).get('user1')
 		user.salt = ''
@@ -203,7 +229,7 @@ class WebisoderModelTests(unittest.TestCase):
 
 		self.assertTrue(user.authenticate('letmein'))
 
-	def test_generate_password(self):
+	def testGeneratePassword(self):
 
 		user = DBSession.query(User).get('user1')
 		password = user.generate_password()
@@ -211,7 +237,7 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertEqual(12, len(password))
 		self.assertTrue(user.authenticate(password))
 
-	def test_upgrade_password(self):
+	def testUpgradePassword(self):
 
 		user = DBSession.query(User).get('user1')
 		user.passwd = '0d107d09f5bbe40cade3de5c71e9e9b7'
@@ -225,7 +251,7 @@ class WebisoderModelTests(unittest.TestCase):
 
 		self.assertTrue(user.authenticate('letmein'))
 
-	def test_render_episode(self):
+	def testRenderEpisode(self):
 
 		show = DBSession.query(Show).get(1)
 
@@ -245,7 +271,7 @@ class WebisoderModelTests(unittest.TestCase):
 		fmt = '//##SHOW## : ##TITLE##'
 		self.assertEqual('//show1 : test me', ep.render(fmt))
 
-	def test_next_episode(self):
+	def testNextEpisode(self):
 
 		show = DBSession.query(Show).get(2)
 		today = date.today()
@@ -272,10 +298,12 @@ class TestNewUserSignup(WebisoderTest):
 	def setUp(self):
 
 		super(TestNewUserSignup, self).setUp()
+		MockUser.mockAuthentication()
 		self.config.include('pyramid_chameleon')
 
 	def tearDown(self):
 
+		MockUser.resetAuthentication()
 		testing.tearDown()
 
 	def testSignup(self):
@@ -423,6 +451,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 	def setUp(self):
 
 		super(TestAuthenticationAndAuthorization, self).setUp()
+		MockUser.mockAuthentication()
+
 		self.config = testing.setUp()
 		self.config.add_route('shows', '__SHOWS__')
 		self.config.add_route('home', '__HOME__')
@@ -441,6 +471,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 		user = DBSession.query(User).get('testuser100')
 		DBSession.delete(user)
+
+		MockUser.resetAuthentication()
 
 		DBSession.remove()
 		testing.tearDown()
@@ -482,6 +514,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		request = testing.DummyRequest(post={
 			'password': 'wrong'
 		})
+
 		view = AuthController(request)
 		res = view.login_post()
 		self.assertNotIn('auth.userid', request.session)
@@ -579,6 +612,8 @@ class TestShowsView(WebisoderTest):
 		DBSession.configure(bind=engine)
 		Base.metadata.create_all(engine)
 
+		MockUser.mockAuthentication()
+
 		with transaction.manager:
 
 			user = User(name='testuser1')
@@ -619,6 +654,8 @@ class TestShowsView(WebisoderTest):
 			DBSession.add(self.show4)
 
 	def tearDown(self):
+
+		MockUser.resetAuthentication()
 
 		DBSession.remove()
 		testing.tearDown()
@@ -719,7 +756,7 @@ class TestShowsView(WebisoderTest):
 		self.assertNotIn(3, result_shows)
 		self.assertNotIn(4, result_shows)
 
-	def test_search(self):
+	def testSearch(self):
 
 		class mock_show(object):
 
@@ -805,7 +842,7 @@ class TestShowsView(WebisoderTest):
 		search = res.get('search')
 		self.assertEqual(search, 'd')
 
-	def test_episodes(self):
+	def testEpisodes(self):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
@@ -839,7 +876,7 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual('ep5', ep[1].title)
 		self.assertEqual('ep2', ep[2].title)
 
-	def test_feed(self):
+	def testFeed(self):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
@@ -898,6 +935,7 @@ class TestProfileView(WebisoderTest):
 	def setUp(self):
 
 		super(TestProfileView, self).setUp()
+		MockUser.mockAuthentication()
 
 		with transaction.manager:
 
@@ -918,6 +956,8 @@ class TestProfileView(WebisoderTest):
 
 			user = DBSession.query(User).get('testuser12')
 			DBSession.delete(user)
+
+		MockUser.resetAuthentication()
 
 		DBSession.remove()
 		testing.tearDown()
@@ -1423,14 +1463,14 @@ class TestIndexPage(WebisoderTest):
 
 		testing.tearDown()
 
-	def test_no_user(self):
+	def testNoUser(self):
 
 		request = testing.DummyRequest()
 
 		res = index(request)
 		self.assertFalse(hasattr(res, 'location'))
 
-	def test_user(self):
+	def testUser(self):
 
 		request = testing.DummyRequest()
 		request.session['auth.userid'] = 'testuser1'
