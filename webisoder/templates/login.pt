@@ -37,7 +37,7 @@
 				<button type="submit" class="btn btn-primary">Sign in</button>
 			</div>
 			<div class="panel-footer">
-				<a href="${request.route_url('register')}">Create account</a> or <a href="${request.route_url('register')}">reset password</a>
+				<a href="${request.route_url('register')}">Create account</a> or <a href="${request.route_url('recover')}">reset password</a>
 			</div>
 		</div>
 	</form>

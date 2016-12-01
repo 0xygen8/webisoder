@@ -1,5 +1,5 @@
 # webisoder
-# Copyright (C) 2006-2015  Stefan Ott
+# Copyright (C) 2006-2016  Stefan Ott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -22,7 +22,7 @@ from sqlalchemy import Table, ForeignKey, Index
 from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 from hashlib import md5
 from bcrypt import hashpw, gensalt
@@ -35,6 +35,7 @@ Base = declarative_base()
 subscriptions = Table('subscriptions', Base.metadata,
 	Column('show_id', Integer, ForeignKey('shows.show_id')),
 	Column('user_name', Text, ForeignKey('users.user_name')))
+
 
 class User(Base):
 
@@ -52,9 +53,11 @@ class User(Base):
 	lastest_news_read = Column(DateTime)
 	date_offset = Column(Integer)
 	last_login = Column(DateTime)
+	recover_key = Column(Text(30))
 
 	def __set_password(self, plain):
 
+		self.recover_key = None
 		self.passwd = hashpw(plain.encode(), gensalt())
 
 	def authenticate(self, password):
@@ -64,6 +67,7 @@ class User(Base):
 			digest = hashpw(password.encode(), self.passwd.encode())
 
 			if digest == self.passwd:
+				self.recover_key = None
 				return True
 
 		except ValueError:
@@ -71,6 +75,7 @@ class User(Base):
 			digest = md5(password.encode()).hexdigest()
 			if digest == self.passwd:
 				self.password = password
+				self.recover_key = None
 				return True
 
 		return False
@@ -87,6 +92,12 @@ class User(Base):
 		self.password = password
 		return password
 
+	def generate_recover_key(self):
+
+		key = ''.join(SystemRandom().choice(ascii_uppercase +
+			ascii_lowercase + digits) for _ in range(30))
+		self.recover_key = key
+
 	def __get_episodes(self):
 
 		shows = [x.id for x in self.shows]
@@ -100,6 +111,7 @@ class User(Base):
 
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)
+
 
 class Show(Base):
 
@@ -136,6 +148,7 @@ class Show(Base):
 		return None
 
 	next_episode = property(__get_next_episode)
+
 
 class Episode(Base):
 

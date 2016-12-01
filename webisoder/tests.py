@@ -23,6 +23,7 @@ from pyramid import testing
 from pyramid_mailer import get_mailer
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import SessionAuthenticationPolicy
+from pyramid.httpexceptions import HTTPBadRequest
 from sqlalchemy import create_engine
 
 from .models import DBSession
@@ -31,7 +32,23 @@ from .models import Base, Show, Episode, User
 from .views import AuthController, RegistrationController, TokenResetController
 from .views import ProfileController, ShowsController, PasswordChangeController
 from .views import FeedSettingsController, SearchController, EpisodesController
-from .views import index
+from .views import PasswordRecoveryController, PasswordResetController, index
+
+
+class Database(object):
+
+	_engine = None
+
+	@staticmethod
+	def connect():
+
+		if Database._engine:
+			return
+
+		Database._engine = create_engine('sqlite://')
+		DBSession.configure(bind=Database._engine)
+		Base.metadata.create_all(Database._engine)
+
 
 class MockUser(object):
 
@@ -40,12 +57,10 @@ class MockUser(object):
 
 		def setUnhashedPassword(self, plain):
 
-			#print("SET PASSWORD")
 			self.passwd = plain
 
 		def authenticateUnhashed(self, password):
 
-			#print("AUTHENTICATE")
 			return password == self.passwd
 
 		User.origPassword = User.password
@@ -59,11 +74,13 @@ class MockUser(object):
 		User.password = User.origPassword
 		User.authenticate = User.origAuth
 
+
 class WebisoderTest(unittest.TestCase):
 
 	def setUp(self):
 
 		self.config = testing.setUp()
+		Database.connect()
 
 		authentication_policy = SessionAuthenticationPolicy()
 		authorization_policy = ACLAuthorizationPolicy()
@@ -76,9 +93,12 @@ class WebisoderTest(unittest.TestCase):
 		self.config.add_route('settings_feed', '__FEED__')
 		self.config.add_route('shows', '__SHOWS__')
 		self.config.add_route('login', '__LOGIN__')
+		self.config.add_route('recover', '__RECOVER__')
+		self.config.add_route('reset_password', '__REC__/{key}')
 
 		# Use dummy mailer
 		self.config.include('pyramid_mailer.testing')
+
 
 class WebisoderModelTests(unittest.TestCase):
 
@@ -86,9 +106,7 @@ class WebisoderModelTests(unittest.TestCase):
 
 		super(WebisoderModelTests, self).setUp()
 		self.config = testing.setUp()
-		engine = create_engine('sqlite://')
-		DBSession.configure(bind=engine)
-		Base.metadata.create_all(engine)
+		Database.connect()
 
 		with transaction.manager:
 
@@ -107,6 +125,12 @@ class WebisoderModelTests(unittest.TestCase):
 			DBSession.add(User(name='user3'))
 
 	def tearDown(self):
+
+		with transaction.manager:
+
+			DBSession.query(Episode).delete()
+			DBSession.query(Show).delete()
+			DBSession.query(User).delete()
 
 		DBSession.remove()
 		testing.tearDown()
@@ -237,6 +261,15 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertEqual(12, len(password))
 		self.assertTrue(user.authenticate(password))
 
+	def testGenerateRecoverKey(self):
+
+		user = DBSession.query(User).get('user1')
+		self.assertEqual(None, user.recover_key)
+		user.generate_recover_key()
+
+		self.assertNotEqual(None, user.recover_key)
+		self.assertEqual(30, len(user.recover_key))
+
 	def testUpgradePassword(self):
 
 		user = DBSession.query(User).get('user1')
@@ -250,6 +283,44 @@ class WebisoderModelTests(unittest.TestCase):
 		self.assertNotEqual('0d107d09f5bbe40cade3de5c71e9e9b7', user.passwd)
 
 		self.assertTrue(user.authenticate('letmein'))
+
+	def testLoginRemovesResetToken(self):
+
+		user = DBSession.query(User).get("user1")
+		user.password = "first"
+		user.recover_key = "testkey287"
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey287", user.recover_key)
+		user.authenticate("wrong")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey287", user.recover_key)
+		user.authenticate("first")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual(None, user.recover_key)
+
+		user = DBSession.query(User).get("user1")
+		user.passwd = "0d107d09f5bbe40cade3de5c71e9e9b7"
+		user.recover_key = "testkey302"
+		user.authenticate("wrong")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey302", user.recover_key)
+		user.authenticate("letmein")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual(None, user.recover_key)
+
+	def testPasswordUpdateRemovesResetToken(self):
+
+		user = DBSession.query(User).get("user1")
+		user.recover_key = "testkey315"
+
+		self.assertEqual("testkey315", user.recover_key)
+		user.password = "something"
+		self.assertEqual(None, user.recover_key)
 
 	def testRenderEpisode(self):
 
@@ -292,6 +363,7 @@ class WebisoderModelTests(unittest.TestCase):
 			ep = show.next_episode
 
 		self.assertEqual(ep, ep2)
+
 
 class TestNewUserSignup(WebisoderTest):
 
@@ -446,11 +518,307 @@ class TestNewUserSignup(WebisoderTest):
 		self.assertEqual(res.get('email'), 'newuserX@example.org')
 		self.assertEqual(len(mailer.outbox), 1)
 
+
 class TestRecoverPassword(WebisoderTest):
 
-	def testToDo(self):
+	def setUp(self):
 
-		self.assertFalse(True)
+		super(TestRecoverPassword, self).setUp()
+		MockUser.mockAuthentication()
+
+		self.config.include('pyramid_chameleon')
+
+		with transaction.manager:
+
+			user = User(name="testuser467")
+			user.password = "secret"
+			user.mail = "user@example.com"
+			DBSession.add(user)
+
+	def tearDown(self):
+
+		with transaction.manager:
+
+			user = DBSession.query(User).get("testuser467")
+			for show in user.shows:
+				user.shows.remove(show)
+			DBSession.delete(user)
+
+		MockUser.resetAuthentication()
+		testing.tearDown()
+
+	def testRequestPasswordWithErrors(self):
+
+		# no user
+		request = testing.DummyRequest(post={ })
+		mailer = get_mailer(request)
+		ctl = PasswordRecoveryController(request)
+
+		self.assertEqual(len(mailer.outbox), 0)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res.get("form_errors"))
+		self.assertEqual(res.get("email"), "")
+		self.assertEqual(len(mailer.outbox), 0)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual(user.name, "testuser467")
+		self.assertEqual(user.recover_key, None)
+
+		request = testing.DummyRequest(post={ "email": "" })
+		mailer = get_mailer(request)
+		ctl = PasswordRecoveryController(request)
+
+		self.assertEqual(len(mailer.outbox), 0)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res.get("form_errors"))
+		self.assertEqual(res.get("email"), "")
+		self.assertEqual(len(mailer.outbox), 0)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual(user.name, "testuser467")
+		self.assertEqual(user.recover_key, None)
+
+		# invalid e-mail address
+		request = testing.DummyRequest(post={
+			"email": "user.example.com"
+		})
+		mailer = get_mailer(request)
+		ctl = PasswordRecoveryController(request)
+
+		self.assertEqual(len(mailer.outbox), 0)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res.get("form_errors"))
+		self.assertEqual(res.get("email"), "user.example.com")
+		self.assertEqual(len(mailer.outbox), 0)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual(user.name, "testuser467")
+		self.assertEqual(user.recover_key, None)
+
+		# invalid user
+		request = testing.DummyRequest(post={
+			"email": "nosuchuser@example.com"
+		})
+		mailer = get_mailer(request)
+		ctl = PasswordRecoveryController(request)
+
+		self.assertEqual(len(mailer.outbox), 0)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res.get("form_errors"))
+		self.assertEqual(res.get("email"), "nosuchuser@example.com")
+		self.assertEqual(len(mailer.outbox), 0)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual(user.name, "testuser467")
+		self.assertEqual(user.recover_key, None)
+
+	def testRequestPassword(self):
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com"
+		})
+		mailer = get_mailer(request)
+		ctl = PasswordRecoveryController(request)
+
+		self.assertEqual(len(mailer.outbox), 0)
+		res = ctl.post()
+
+		self.assertNotIn("form_errors", res)
+		self.assertTrue(hasattr(res, "location"))
+		self.assertTrue(res.location.endswith("__LOGIN__"))
+		self.assertEqual(len(mailer.outbox), 1)
+
+		message = mailer.outbox[0]
+		self.assertEqual(message.subject, "Webisoder password recovery")
+		self.assertEqual(message.sender, 'noreply@webisoder.net')
+		self.assertEqual(len(message.recipients), 1)
+		self.assertIn("user@example.com", message.recipients)
+		self.assertIn("testuser467", message.body)
+		self.assertIn("To reset your password", message.body)
+		self.assertNotIn("__RECOVER__", message.body)
+		self.assertIn("__REC__", message.body)
+		self.assertIn("__LOGIN__", message.body)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual(user.name, "testuser467")
+		self.assertNotEqual(user.recover_key, None)
+		self.assertNotEqual(user.recover_key, "")
+		self.assertEqual(len(user.recover_key), 30)
+		self.assertIn(user.recover_key, message.body)
+
+	def testGetResetForm(self):
+
+		request = testing.DummyRequest()
+		ctl = PasswordResetController(request)
+
+		with self.assertRaises(HTTPBadRequest):
+			ctl.get()
+
+		request = testing.DummyRequest()
+		request.matchdict["key"] = ""
+		ctl = PasswordResetController(request)
+
+		with self.assertRaises(HTTPBadRequest):
+			ctl.get()
+
+		request = testing.DummyRequest()
+		request.matchdict["key"] = "testkey615"
+		ctl = PasswordResetController(request)
+		res = ctl.get()
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey615")
+
+	def testPostWrongResetForm(self):
+
+		request = testing.DummyRequest(post={
+			"password": "newpwd",
+			"verify": "newpwd"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"verify": "newpwd"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpwd"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpwd",
+			"verify": "newpwd"
+		})
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpw",
+			"verify": "newpw"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpwd",
+			"verify": "newpw"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user.example.com",
+			"password": "newpwd",
+			"verify": "newpwd"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user.example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "nosuchuser@example.com",
+			"password": "newpwx",
+			"verify": "newpwx"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "nosuchuser@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "testkey639")
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpwx",
+			"verify": "newpwx"
+		})
+		request.matchdict["key"] = "wrongkey"
+		ctl = PasswordResetController(request)
+		res = ctl.post()
+		self.assertIn("form_errors", res)
+		self.assertIn("email", res)
+		self.assertEqual(res.get("email"), "user@example.com")
+		self.assertIn("key", res)
+		self.assertEqual(res.get("key"), "wrongkey")
+
+	def testPostResetForm(self):
+
+		user = DBSession.query(User).get("testuser467")
+		user.recover_key = "testkey639"
+
+		request = testing.DummyRequest(post={
+			"email": "user@example.com",
+			"password": "newpwx",
+			"verify": "newpwx"
+		})
+		request.matchdict["key"] = "testkey639"
+		ctl = PasswordResetController(request)
+
+		user = DBSession.query(User).get("testuser467")
+		self.assertEqual("testkey639", user.recover_key)
+		res = ctl.post()
+
+		self.assertNotIn("form_errors", res)
+		self.assertTrue(user.authenticate("newpwx"))
+
+		self.assertTrue(hasattr(res, "location"))
+		self.assertTrue(res.location.endswith("__LOGIN__"))
+
 
 class TestAuthenticationAndAuthorization(WebisoderTest):
 
@@ -459,13 +827,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		super(TestAuthenticationAndAuthorization, self).setUp()
 		MockUser.mockAuthentication()
 
-		self.config = testing.setUp()
 		self.config.add_route('shows', '__SHOWS__')
 		self.config.add_route('home', '__HOME__')
-
-		engine = create_engine('sqlite://')
-		DBSession.configure(bind=engine)
-		Base.metadata.create_all(engine)
 
 		with transaction.manager:
 
@@ -475,8 +838,12 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 	def tearDown(self):
 
-		user = DBSession.query(User).get('testuser100')
-		DBSession.delete(user)
+		with transaction.manager:
+
+			user = DBSession.query(User).get('testuser100')
+			for s in user.shows:
+				user.unsubscribe(s)
+			DBSession.delete(user)
 
 		MockUser.resetAuthentication()
 
@@ -608,34 +975,30 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		self.assertEqual(1, len(msg))
 		self.assertEqual('Successfully signed out. Goodbye.', msg[0])
 
+
 class TestShowsView(WebisoderTest):
 
 	def setUp(self):
 
 		super(TestShowsView, self).setUp()
-
-		engine = create_engine('sqlite://')
-		DBSession.configure(bind=engine)
-		Base.metadata.create_all(engine)
-
 		MockUser.mockAuthentication()
 
 		with transaction.manager:
 
-			user = User(name='testuser1')
-			user.password = 'secret'
-			user.token = 'mytoken'
-			user.days_back = 0
-			DBSession.add(user)
+			self.user = User(name='testuser1')
+			self.user.password = "secret"
+			self.user.token = 'mytoken'
+			self.user.days_back = 0
+			DBSession.add(self.user)
 
 			self.show1 = Show(id=1, name='show1', url='http://1')
 			self.show2 = Show(id=2, name='show2', url='http://2')
 			self.show3 = Show(id=3, name='show3', url='http://3')
 			self.show4 = Show(id=4, name='show4', url='http://4')
 
-			user.shows.append(self.show1)
-			user.shows.append(self.show2)
-			user.shows.append(self.show3)
+			self.user.shows.append(self.show1)
+			self.user.shows.append(self.show2)
+			self.user.shows.append(self.show3)
 
 			today = date.today()
 
@@ -660,6 +1023,19 @@ class TestShowsView(WebisoderTest):
 			DBSession.add(self.show4)
 
 	def tearDown(self):
+
+		with transaction.manager:
+
+			user = DBSession.query(User).get("testuser1")
+			shows = [s.id for s in user.shows]
+
+			for id in shows:
+				show = DBSession.query(Show).get(id)
+				user.shows.remove(show)
+
+			DBSession.query(Episode).delete()
+			DBSession.query(Show).delete()
+			DBSession.delete(user)
 
 		MockUser.resetAuthentication()
 
@@ -935,6 +1311,7 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual('ep4', ep[0].title)
 		self.assertEqual('ep5', ep[1].title)
 		self.assertEqual('ep2', ep[2].title)
+
 
 class TestProfileView(WebisoderTest):
 
@@ -1459,6 +1836,7 @@ class TestProfileView(WebisoderTest):
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 
+
 class TestIndexPage(WebisoderTest):
 
 	def setUp(self):
@@ -1474,13 +1852,13 @@ class TestIndexPage(WebisoderTest):
 		request = testing.DummyRequest()
 
 		res = index(request)
-		self.assertFalse(hasattr(res, 'location'))
+		self.assertFalse(hasattr(res, "location"))
 
 	def testUser(self):
 
 		request = testing.DummyRequest()
-		request.session['auth.userid'] = 'testuser1'
+		request.session["auth.userid"] = "testuser1"
 
 		res = index(request)
-		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__SHOWS__'))
+		self.assertTrue(hasattr(res, "location"))
+		self.assertTrue(res.location.endswith("__SHOWS__"))

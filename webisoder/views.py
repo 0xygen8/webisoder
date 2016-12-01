@@ -30,7 +30,8 @@ from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound
 
 from .models import DBSession, User, Show
 from .forms import ProfileForm, PasswordForm, FeedSettingsForm, UnsubscribeForm
-from .forms import LoginForm, SearchForm, SignupForm
+from .forms import LoginForm, SearchForm, SignupForm, RequestPasswordResetForm
+from .forms import PasswordResetForm
 
 @decorator
 def securetoken(func, *args, **kwargs):
@@ -61,6 +62,10 @@ def index(request):
 
 	return {}
 
+@view_config(route_name='contact', renderer='templates/contact.pt', request_method='GET')
+def contact(request):
+
+	return {}
 
 class WebisoderController(object):
 
@@ -226,10 +231,10 @@ class RegistrationController(WebisoderController):
 			{ 'name': name, 'password': password },
 			request=self.request)
 		message = Message(
-			subject='New user registration',
-			sender='noreply@webisoder.net',
-			recipients=[mail],
-			body=body)
+			subject = "New user registration",
+			sender = "noreply@webisoder.net",
+			recipients = [ mail ],
+			body = body)
 
 		try:
 			mailer.send_immediately(message, fail_silently=False)
@@ -242,6 +247,130 @@ class RegistrationController(WebisoderController):
 		self.flash('info', 'Your account has been created and your '
 			'initial password was sent to %s' % (mail))
 		return self.redirect('login')
+
+
+@view_defaults(route_name="recover", renderer="templates/recover.pt")
+class PasswordRecoveryController(WebisoderController):
+
+	@view_config(request_method="GET")
+	def get(self):
+
+		return {}
+
+	@view_config(request_method="POST")
+	def post(self):
+
+		controls = self.request.POST.items()
+		form = Form(RequestPasswordResetForm())
+
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			email = self.request.POST.get("email", "")
+			errors = e.error.asdict()
+			return { "email": email, "form_errors": errors }
+
+		email = data.get("email")
+		users = DBSession.query(User).filter_by(mail=email)
+		if users.count() != 1:
+			data["form_errors"] = { "email": "No such user" }
+			return data
+
+		user = users.one()
+		user.generate_recover_key()
+		mailer = get_mailer(self.request)
+
+		body = render(
+			'templates/mail/recover.pt',
+			{ "user": user },
+			request=self.request)
+		message = Message(
+			subject = "Webisoder password recovery",
+			sender = "noreply@webisoder.net",
+			recipients = [ email ],
+			body = body)
+
+		try:
+			mailer.send_immediately(message, fail_silently=False)
+		except Exception as e:
+			DBSession.rollback()
+			self.flash("danger", "Failed to send message. Your "
+				"account was not created.")
+			return { "email": email }
+
+		self.flash("info", "Instructions on how to reset your password "
+			"have been sent to %s" % ( email ))
+		return self.redirect("login")
+
+@view_defaults(route_name="reset_password", renderer="templates/reset.pt")
+class PasswordResetController(WebisoderController):
+
+	@view_config(request_method="GET")
+	def get(self):
+
+		key = self.request.matchdict.get("key", "")
+
+		if not key:
+			raise HTTPBadRequest()
+
+		return { "key": key }
+
+	@view_config(request_method="POST")
+	def post(self):
+
+		controls = self.request.POST.items()
+		form = Form(PasswordResetForm())
+		key = self.request.matchdict.get("key", "")
+
+		try:
+			data = form.validate(controls)
+		except ValidationFailure as e:
+			email = self.request.POST.get("email", "")
+			errors = e.error.asdict()
+
+			return {
+				"email": email,
+				"key": key,
+				"form_errors": errors
+			}
+
+		email = data.get("email")
+
+		if not data.get("verify") == data.get("password"):
+
+			self.flash("danger", "Password reset failed")
+			msg = "Passwords do not match"
+			return {
+				"email": email,
+				"key": key,
+				"form_errors": {"verify": msg }
+			}
+
+		query = DBSession.query(User).filter_by(mail=email)
+		if query.count() != 1:
+
+			self.flash("danger", "Password reset failed")
+			msg = "No such user"
+			return {
+				"email": email,
+				"key": key,
+				"form_errors": {"email": msg }
+			}
+
+		user = query.one()
+		if key != user.recover_key:
+
+			msg = "Wrong recovery key"
+			return {
+				"email": email,
+				"key": key,
+				"form_errors": {"key": msg }
+			}
+
+		user.password = data.get("password")
+
+		self.flash('info', 'Your password has been changed')
+		return self.redirect("login")
 
 
 @view_defaults(route_name='search', permission='view')
@@ -450,7 +579,7 @@ class PasswordChangeController(WebisoderController):
 		if not data.get('verify') == data.get('new'):
 
 			self.flash('danger', 'Password change failed')
-			msg = 'Passwords to not match'
+			msg = 'Passwords do not match'
 			return { 'user': user, 'form_errors': { 'verify': msg } }
 
 		user.password = data.get('new')

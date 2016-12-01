@@ -1,0 +1,44 @@
+<html metal:use-macro="load: base.pt">
+
+<nav metal:fill-slot="nav" class="navbar navbar-inverse navbar-fixed-top">
+	<div class="container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
+		</div>
+	</div>
+</nav>
+
+<div metal:fill-slot="main" class="container" tal:define="errors form_errors|{}">
+	<form method="post" action="${request.route_url('recover')}" class="login">
+		<div class="panel panel-default">
+			<div class="panel-heading">Recover password</div>
+			<div class="panel-body">
+				<p>If you previously created an account with us but forgot your password, this is your chance to get it back.</p>
+				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+				<div class="form-group">
+					<div tal:omit-tag="'email' not in errors" class="has-error">
+						<label for="inputName" class="sr-only">Your e-mail addres</label>
+						<div class="input-group">
+							<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
+							<input class="form-control" type="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+						</div>
+						<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+					</div>
+				</div>
+				<p>Enter your e-mail address in the field above and we will send you a link to reset your password.</p>
+				<button type="submit" class="btn btn-primary">Recover</button>
+			</div>
+			<div class="panel-footer">
+				<a href="${request.route_url('login')}">&laquo; Return to login form</a>
+			</div>
+		</div>
+	</form>
+</div>
+
+</html>
