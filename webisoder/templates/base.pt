@@ -7,7 +7,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" type="text/css" href="${request.static_url('webisoder:static/css/bootstrap.min.css')}" />
 		<link rel="stylesheet" type="text/css" href="${request.static_url('webisoder:static/css/style.css')}" />
-		<script type="text/javascript" src="${request.static_url('webisoder:static/js/jquery-2.1.4.min.js')}"></script>
+		<script type="text/javascript" src="${request.static_url('webisoder:static/js/jquery-3.1.1.min.js')}"></script>
 		<script type="text/javascript" src="${request.static_url('webisoder:static/js/bootstrap.min.js')}"></script>
 		<script metal:define-slot="js" tal:omit-tag=""></script>
 	</head>
