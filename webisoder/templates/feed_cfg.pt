@@ -58,7 +58,7 @@
 						<div class="form-group">
 							<label for="inputFormat">Link format</label>
 							<div tal:omit-tag="'link_format' not in errors" class="has-error">
-								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}" notrequired />
+								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
 								<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
 							</div>
 							<p class="help-block">
