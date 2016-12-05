@@ -1,0 +1,10 @@
+Hello ${user.name}
+
+Somebody (possibly you) has requested a new password for your
+Webisoder account. To reset your password visit the following link:
+
+	${request.route_url('reset_password', key=user.recover_key)}
+
+
+Your password reset request will automatically be cancelled the
+next time you log in at ${request.route_url('login')}.

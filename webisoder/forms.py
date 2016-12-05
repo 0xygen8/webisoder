@@ -1,5 +1,5 @@
 # webisoder
-# Copyright (C) 2006-2015  Stefan Ott
+# Copyright (C) 2006-2016  Stefan Ott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -75,3 +75,13 @@ class SignupForm(MappingSchema):
 class SearchForm(MappingSchema):
 
 	search = SchemaNode(String(), validator=Length(min=2))
+
+class PasswordResetForm(MappingSchema):
+
+	email = SchemaNode(String(), validator=Email())
+	password = SchemaNode(String(), validator=Length(min=6))
+	verify = SchemaNode(String())
+
+class RequestPasswordResetForm(MappingSchema):
+
+	email = SchemaNode(String(), validator=Email())

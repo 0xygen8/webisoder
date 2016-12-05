@@ -1,5 +1,5 @@
 # webisoder
-# Copyright (C) 2006-2015  Stefan Ott
+# Copyright (C) 2006-2016  Stefan Ott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -48,8 +48,11 @@ def main(global_config, **settings):
 	config.add_static_view('static', 'static', cache_max_age=3600)
 	config.add_route('home', '/')
 	config.add_route('login', '/login')
+	config.add_route('contact', '/contact')
 	config.add_route('logout', '/logout')
 	config.add_route('register', '/register')
+	config.add_route('recover', '/recover')
+	config.add_route('reset_password', '/recover/{key}')
 	config.add_route('shows', '/shows')
 	config.add_route('search', '/search')
 	config.add_route('profile', '/profile')
