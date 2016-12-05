@@ -295,7 +295,7 @@ class PasswordRecoveryController(WebisoderController):
 		except Exception as e:
 			DBSession.rollback()
 			self.flash("danger", "Failed to send message. Your "
-				"account was not created.")
+				"password was not reset.")
 			return { "email": email }
 
 		self.flash("info", "Instructions on how to reset your password "
