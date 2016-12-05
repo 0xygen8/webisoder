@@ -1,6 +1,6 @@
 <html metal:use-macro="load: base_auth.pt">
 
-<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile.js')}"></script>
+<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile-feed-settings.js')}"></script>
 
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
