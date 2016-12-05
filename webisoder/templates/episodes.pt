@@ -13,26 +13,26 @@
 	<p>Your list of episodes is also available as a <a href="${request.route_url('feed', user=user.name, token=user.token)}">web feed</a> and as an <a href="${request.route_url('ical', user=user.name, token=user.token)}">iCalendar</a>.</p>
 
 	<h3>Recent</h3>
-	<div class="list-group" tal:define="global prevdate 0">
+	<ul class="list-group" tal:define="global prevdate 0">
 		<div tal:repeat="episode episodes" tal:omit-tag="">
-			<div tal:condition="episode.airdate <= date.today()">
+			<div tal:condition="episode.airdate <= date.today()" tal:omit-tag="">
 				<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
 				<li class="list-group-item">${episode}</li>
 				<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
 			</div>
 		</div>
-	</div>
+	</ul>
 
 	<h3>Upcoming</h3>
-	<div class="list-group" tal:define="global prevdate 0">
+	<ul class="list-group" tal:define="global prevdate 0">
 		<div tal:repeat="episode episodes" tal:omit-tag="">
-			<div tal:condition="episode.airdate > date.today()">
+			<div tal:condition="episode.airdate > date.today()" tal:omit-tag="">
 				<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
 				<li class="list-group-item">${episode}</li>
 				<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
 			</div>
 		</div>
-	</div>
+	</ul>
 
 </div>
 
