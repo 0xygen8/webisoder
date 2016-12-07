@@ -14,6 +14,7 @@
 			<ul metal:define-slot="navitems" class="nav navbar-nav">
 				<li><a href="${request.route_url('shows')}">Shows</a></li>
 				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
+ 				<li><a href="${request.route_url('settings_feed')}">Configuration</a></li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
 				<li><span class="navbar-text">Signed in as <a href="${request.route_url('profile')}">${request.authenticated_userid}</a></span></li>

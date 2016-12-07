@@ -11,9 +11,7 @@
 				<div class="panel-heading"><strong>Personal settings</strong></div>
 				<div class="list-group">
 					<a class="list-group-item" href="${request.route_url('profile')}">General settings</a>
-					<a class="list-group-item active" href="${request.route_url('settings_pw')}">Account settings</a>
-					<a class="list-group-item" href="${request.route_url('settings_feed')}">Feed settings</a>
-					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
+					<a class="list-group-item active" href="${request.route_url('settings_pw')}">Change password</a>
 				</div>
 			</div>
 		</div>
