@@ -3,7 +3,7 @@
 <ul metal:fill-slot="navitems" class="nav navbar-nav">
 	<li><a href="${request.route_url('shows')}">Shows</a></li>
 	<li class="active"><a href="${request.route_url('episodes')}">Episodes</a></li>
-	<li><a href="${request.route_url('settings_feed')}">Configuration</a></li>
+	<li><a href="${request.route_url('settings_feed')}">Feeds</a></li>
 </ul>
 
 <div metal:fill-slot="main" class="container">

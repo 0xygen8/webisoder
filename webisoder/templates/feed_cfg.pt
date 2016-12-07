@@ -5,7 +5,7 @@
 <ul metal:fill-slot="navitems" class="nav navbar-nav">
 	<li><a href="${request.route_url('shows')}">Shows</a></li>
 	<li><a href="${request.route_url('episodes')}">Episodes</a></li>
-	<li class="active"><a href="${request.route_url('settings_feed')}">Configuration</a></li>
+	<li class="active"><a href="${request.route_url('settings_feed')}">Feeds</a></li>
 </ul>
 
 <div metal:fill-slot="main" class="container">
@@ -16,7 +16,7 @@
 	<div class="row">
 		<div class="col-sm-2">
 			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Configuration</strong></div>
+				<div class="panel-heading"><strong>Feeds</strong></div>
 				<div class="list-group">
 					<a class="list-group-item active" href="${request.route_url('settings_feed')}">Feed settings</a>
 					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
