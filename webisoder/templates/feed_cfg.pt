@@ -32,7 +32,7 @@
 						<div class="form-group">
 							<label for="inputDays">Maximum age</label>
 							<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
-								<select class="form-control" name="days_back" id="inputDays" autofocus>
+								<select class="form-control" name="days_back" id="inputDays">
 									<option tal:repeat="value range(1,8)" tal:attributes="selected user.days_back == value">${value}</option>
 								</select>
 								<div class="input-group-addon">days</div>
