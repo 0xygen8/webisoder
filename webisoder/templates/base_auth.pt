@@ -14,7 +14,13 @@
 			<ul metal:define-slot="navitems" class="nav navbar-nav">
 				<li><a href="${request.route_url('shows')}">Shows</a></li>
 				<li><a href="${request.route_url('episodes')}">Episodes</a></li>
- 				<li><a href="${request.route_url('settings_feed')}">Feeds</a></li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Feeds <span class="caret"></span></a>
+					<ul class="dropdown-menu">
+						<li><a href="${request.route_url('settings_feed')}">Feed settings</a></li>
+						<li><a href="${request.route_url('settings_token')}">Access token</a></li>
+					</ul>
+				</li>
 			</ul>
 			<form class="navbar-form navbar-left" role="search" method="post" action="${request.route_url('search')}" tal:define="errors form_errors|{}">
 				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
@@ -34,7 +40,16 @@
 				</span>
 			</form>
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
-				<li><span class="navbar-text">Signed in as <a href="${request.route_url('profile')}">${request.authenticated_userid}</a></span></li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+						<span class="glyphicon glyphicon-user"></span>
+						${request.authenticated_userid} <span class="caret"></span>
+					</a>
+					<ul class="dropdown-menu">
+						<li><a href="${request.route_url('profile')}">General settings</a></li>
+						<li><a href="${request.route_url('settings_pw')}">Change password</a></li>
+					</ul>
+				</li>
 				<li><a href="${request.route_url('logout')}">Sign out</a></li>
 			</ul>
 		</div>
