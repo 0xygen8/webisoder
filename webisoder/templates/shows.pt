@@ -49,26 +49,6 @@
 			</tr>
 		</table>
 	</div>
-
-	<!-- the following table is for testing purposes only -->
-	<table class="table">
-		<thead>
-			<tr>
-				<th>Show name</th>
-				<th>Options</th>
-			</tr>
-		</thead>
-		<tr tal:repeat="item sorted(list(set(shows) - set(subscribed)))">
-			<td>${item.name}</td>
-			<td>
-				<form method="post" action="${request.route_url('subscribe')}">
-					<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-					<input type="hidden" name="show" value="${item.id}" />
-					<input type="submit" class="btn btn-primary" value="Subscribe" />
-				</form>
-			</td>
-		</tr>
-	</table>
 </div>
 
 </html>

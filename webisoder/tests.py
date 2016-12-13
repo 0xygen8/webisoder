@@ -64,6 +64,67 @@ class Database(object):
 		Base.metadata.create_all(Database._engine)
 
 
+class MockTVDB(object):
+
+	def __init__(self):
+
+		self.shows = {
+			1: {
+				"seriesname": "doctor who"
+			},
+			2: {
+				"seriesname": "doctor who"
+			},
+			3: {
+				"seriesname": "doctor who"
+			},
+			4: {
+				"seriesname": "doctor who"
+			},
+			5: {
+				"seriesname": "doctor who"
+			},
+			6: {
+				"seriesname": "doctor who"
+			},
+			1359: {
+				"seriesname": "Show 1359"
+			},
+			79169: {
+				"seriesname": "Seinfeld"
+			},
+			80379: {
+				"seriesname": "big bang theory",
+			}
+		}
+
+	def getByURL(self, url):
+
+		id = int(url)
+		show = self.shows.get(id)
+
+		if not show:
+			raise tvdb_shownotfound()
+
+		return show
+
+	def search(self, text):
+
+		res = []
+		for id in self.shows:
+
+			show = self.shows[id]
+			show["id"] = id
+			if text in show["seriesname"]:
+
+				res.append(show)
+
+		if len(res) < 1:
+			raise tvdb_shownotfound()
+
+		return res
+
+
 class MockUser(object):
 
 	@staticmethod
@@ -1238,7 +1299,7 @@ class TestShowsView(WebisoderTest):
 			self.show1 = Show(id=1, name='show1', url='http://1')
 			self.show2 = Show(id=2, name='show2', url='http://2')
 			self.show3 = Show(id=3, name='show3', url='http://3')
-			self.show4 = Show(id=4, name='show4', url='http://4')
+			self.show4 = Show(id=4, name='show4', url='1265')
 
 			self.user.shows.append(self.show1)
 			self.user.shows.append(self.show2)
@@ -1301,27 +1362,17 @@ class TestShowsView(WebisoderTest):
 
 	def testSubscribeShow(self):
 
-		request = testing.DummyRequest()
+		user = DBSession.query(User).get("testuser1")
+		shows = [x.id for x in user.shows]
+		self.assertNotIn(4, shows)
+		request = testing.DummyRequest({"url": "1265"})
 		request.session["auth.userid"] = "testuser1"
 		ctl = ShowsController(request)
-		with self.assertRaises(ValidationFailure):
-			ctl.subscribe()
-
-		request = testing.DummyRequest(post={"show": "a"})
-		request.session["auth.userid"] = "testuser1"
-		with self.assertRaises(ValidationFailure):
-			ctl.subscribe()
-
-		request = testing.DummyRequest(post={"show": "5"})
-		request.session["auth.userid"] = "testuser1"
-		ctl = ShowsController(request)
-		with self.assertRaises(SubscriptionFailure):
-			ctl.subscribe()
-
-		request = testing.DummyRequest(post={"show": "4"})
-		request.session["auth.userid"] = "testuser1"
-		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
 		res = ctl.subscribe()
+		shows = [x.id for x in user.shows]
+		self.assertIn(4, shows)
+
 		self.assertTrue(hasattr(res, "location"))
 		self.assertTrue(res.location.endswith("__SHOWS__"))
 
@@ -1329,14 +1380,91 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual(1, len(msg))
 		self.assertEqual('Subscribed to "show4"', msg[0])
 
-		ctl = ShowsController(request)
-		res = ctl.get()
+	def testSubscribeShowWithWrongArguments(self):
 
-		result_shows = [x.id for x in res["subscribed"]]
-		self.assertIn(1, result_shows)
-		self.assertIn(2, result_shows)
-		self.assertIn(3, result_shows)
-		self.assertIn(4, result_shows)
+		request = testing.DummyRequest()
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+		with self.assertRaises(ValidationFailure):
+			ctl.subscribe()
+
+		request = testing.DummyRequest(post={"url": ""})
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+		with self.assertRaises(ValidationFailure):
+			ctl.subscribe()
+
+		request = testing.DummyRequest(post={"url": "0"})
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+		with self.assertRaises(ValidationFailure):
+			ctl.subscribe()
+
+		request = testing.DummyRequest(post={"url": "a"})
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+		with self.assertRaises(ValidationFailure) as ctx:
+			ctl.subscribe()
+
+		request.exception = ctx.exception
+		res = ctl.failure()
+		self.assertIn("subscribed", res)
+
+		msg = request.session.pop_flash("danger")
+		self.assertEqual(1, len(msg))
+		self.assertEqual("Failed to modify subscription", msg[0])
+		self.assertEqual("a", res.get("url"))
+
+		res = ctl.tvdb_not_found()
+		self.assertIn("subscribed", res)
+		msg = request.session.pop_flash("danger")
+		self.assertEqual(1, len(msg))
+		self.assertEqual("Failed to subscribe to show: not found",
+									msg[0])
+		self.assertEqual("a", res.get("url"))
+
+	def testSubscribeAndImportShow(self):
+
+		user = DBSession.query(User).get("testuser1")
+		shows = [x.id for x in user.shows]
+		self.assertNotIn(1359, shows)
+		request = testing.DummyRequest({"url": "1359"})
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+		res = ctl.subscribe()
+		shows = [x.url for x in user.shows]
+		self.assertIn("1359", shows)
+
+		query = DBSession.query(Show).filter_by(url="1359")
+		show = query.one()
+		self.assertEqual("Show 1359", show.name)
+
+		self.assertTrue(hasattr(res, "location"))
+		self.assertTrue(res.location.endswith("__SHOWS__"))
+
+		msg = request.session.pop_flash("info")
+		self.assertEqual(1, len(msg))
+		self.assertEqual('Subscribed to "Show 1359"', msg[0])
+
+	def testSubscribeAndImportShowThatDoesNotExist(self):
+
+		user = DBSession.query(User).get("testuser1")
+		shows = [x.id for x in user.shows]
+		self.assertNotIn(1360, shows)
+		request = testing.DummyRequest({"url": "1360"})
+		request.session["auth.userid"] = "testuser1"
+		ctl = ShowsController(request)
+		ctl.backend = MockTVDB
+
+		with self.assertRaises(tvdb_shownotfound):
+			ctl.subscribe()
+		shows = [x.url for x in user.shows]
+		self.assertNotIn("1360", shows)
 
 	def testUnsubscribeShow(self):
 
@@ -1380,45 +1508,14 @@ class TestShowsView(WebisoderTest):
 
 	def testSearch(self):
 
-		class mock_show(object):
-
-			def __init__(self, id):
-				self.attr = {}
-				self.attr["id"] = id
-
-			def get(self, attr):
-				return self.attr.get(attr)
-
-		class tvdb_mock():
-
-			def __init__(self, custom_ui=None):
-				self.items = {
-					"big bang theory": [ mock_show(80379) ],
-					"doctor who": [
-						mock_show(1),
-						mock_show(2),
-						mock_show(3),
-						mock_show(4),
-						mock_show(5),
-						mock_show(6)
-					]
-				}
-				self.ui = custom_ui(None)
-
-			def __getitem__(self, item):
-
-				if item in self.items:
-					self.ui.selectSeries(self.items[item])
-				else:
-					raise tvdb_shownotfound()
-
 		# No search term
 		request = testing.DummyRequest(post={})
 		request.session["auth.userid"] = "testuser1"
 		ctl = SearchController(request)
+		ctl.backend = MockTVDB
 
 		with self.assertRaises(ValidationFailure) as ctx:
-			ctl.post(tvdb=tvdb_mock)
+			ctl.post()
 
 		request.exception = ctx.exception
 		res = ctl.failure()
@@ -1433,7 +1530,8 @@ class TestShowsView(WebisoderTest):
 		})
 		request.session["auth.userid"] = "testuser1"
 		ctl = SearchController(request)
-		res = ctl.post(tvdb=tvdb_mock)
+		ctl.backend = MockTVDB
+		res = ctl.post()
 		self.assertEqual(len(res.get("shows")), 1)
 		self.assertEqual(res.get("search"), "big bang theory")
 		show = res.get("shows")[0]
@@ -1447,9 +1545,10 @@ class TestShowsView(WebisoderTest):
 		})
 		request.session["auth.userid"] = "testuser1"
 		ctl = SearchController(request)
+		ctl.backend = MockTVDB
 
 		with self.assertRaises(tvdb_shownotfound) as ctx:
-			ctl.post(tvdb=tvdb_mock)
+			ctl.post()
 
 		request.exception = ctx.exception
 		res = ctl.not_found()
@@ -1462,7 +1561,8 @@ class TestShowsView(WebisoderTest):
 		request = testing.DummyRequest(post={"search": "doctor who"})
 		request.session["auth.userid"] = "testuser1"
 		ctl = SearchController(request)
-		res = ctl.post(tvdb=tvdb_mock)
+		ctl.backend = MockTVDB
+		res = ctl.post()
 		self.assertTrue(len(res.get("shows")) > 5)
 		self.assertNotIn("form_errors", res)
 		self.assertEqual(res.get("search"), "doctor who")
@@ -1471,9 +1571,10 @@ class TestShowsView(WebisoderTest):
 		request = testing.DummyRequest(post={"search": "d"})
 		request.session["auth.userid"] = "testuser1"
 		ctl = SearchController(request)
+		ctl.backend = MockTVDB
 
 		with self.assertRaises(ValidationFailure) as ctx:
-			ctl.post(tvdb=tvdb_mock)
+			ctl.post()
 
 		request.exception = ctx.exception
 		res = ctl.failure()

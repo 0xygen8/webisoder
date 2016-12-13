@@ -36,9 +36,9 @@
 					<span tal:condition="not:show.get('overview')" class="text-muted">No description available</span>
 				</td>
 				<td>
-					<form method="post" action="/subscribe-ext"> <!-- TODO use dynamic URL -->
+					<form method="post" action="${request.route_url('subscribe')}">
 						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<input type="hidden" name="show" value="${show.seriesid}" />
+						<input type="hidden" name="url" value="${show.seriesid}" />
 						<input type="submit" class="btn btn-primary btn-xs" value="Subscribe" />
 					</form>
 				</td>

@@ -58,9 +58,13 @@ class PasswordForm(MappingSchema):
 	new = SchemaNode(String(), validator=Length(min=6))
 	verify = SchemaNode(String())
 
-class SubscribeForm(MappingSchema):
+class UnSubscribeForm(MappingSchema):
 
 	show = SchemaNode(Integer(), validator=Range(min=1))
+
+class SubscribeForm(MappingSchema):
+
+	url = SchemaNode(Integer(), validator=Range(min=1))
 
 class LoginForm(MappingSchema):
 

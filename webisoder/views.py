@@ -32,11 +32,32 @@ from .errors import LoginFailure, MailError, SubscriptionFailure, DuplicateEmail
 from .errors import FormError, DuplicateUserName
 from .forms import LoginForm, PasswordResetForm, FeedSettingsForm, SubscribeForm
 from .forms import ProfileForm, SearchForm, SignupForm, RequestPasswordResetForm
-from .forms import PasswordForm
+from .forms import PasswordForm, UnSubscribeForm
 from .mail import WelcomeMessage, PasswordRecoveryMessage
 
 log = logging.getLogger(__name__)
 
+
+class TVDBWrapper(object):
+
+	def getByURL(self, url):
+
+		tv = Tvdb()
+		return tv[int(url)]
+
+	def search(self, text):
+
+		result = []
+
+		class TVDBSearch(BaseUI):
+			def selectSeries(self, allSeries):
+				result.extend(allSeries)
+				return BaseUI.selectSeries(self, allSeries)
+
+		tv = Tvdb(custom_ui=TVDBSearch)
+		tv[text]
+
+		return result
 
 @decorator
 def securetoken(func, *args, **kwargs):
@@ -99,22 +120,57 @@ class ContactsController(WebisoderController):
 @view_defaults(renderer="templates/shows.pt")
 class ShowsController(WebisoderController):
 
+	def __init__(self, request):
+
+		super(ShowsController, self).__init__(request)
+		self.backend = TVDBWrapper
+
 	@view_config(route_name="shows", request_method="GET",
 							permission="view")
 	def get(self):
 
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
-		shows = DBSession.query(Show).all()
 
-		return {"subscribed": user.shows, "shows": shows }
+		return {"subscribed": user.shows }
 
 	@view_config(context=ValidationFailure)
 	@view_config(context=SubscriptionFailure)
 	def failure(self):
 
 		self.flash("danger", "Failed to modify subscription")
-		return self.request.POST
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+
+		res = self.request.POST
+		res["subscribed"] = user.shows
+
+		return res
+
+	@view_config(context=tvdb_shownotfound)
+	def tvdb_not_found(self):
+
+		log.critical("TVDB subscription failed: Show not found")
+		self.flash("danger", "Failed to subscribe to show: not found")
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+
+		res = self.request.POST
+		res["subscribed"] = user.shows
+
+		return res
+
+	def import_show(self, url):
+
+		engine = self.backend()
+		data = engine.getByURL(url)
+		show = Show()
+		show.url = url
+		show.name = data["seriesname"]
+
+		DBSession.add(show)
 
 	@view_config(route_name="subscribe", request_method="POST",
 							permission="view")
@@ -124,12 +180,13 @@ class ShowsController(WebisoderController):
 		form = Form(SubscribeForm())
 		data = form.validate(controls)
 
-		show_id = data.get("show")
-		show = DBSession.query(Show).get(int(show_id))
+		url = data.get("url")
+		query = DBSession.query(Show).filter_by(url=url)
 
-		if not show:
-			raise SubscriptionFailure()
+		if query.count() != 1:
+			self.import_show(url)
 
+		show = query.one()
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 		user.shows.append(show)
@@ -142,7 +199,7 @@ class ShowsController(WebisoderController):
 	def unsubscribe(self):
 
 		controls = self.request.POST.items()
-		form = Form(SubscribeForm())
+		form = Form(UnSubscribeForm())
 		data = form.validate(controls)
 
 		show_id = data.get("show")
@@ -363,6 +420,11 @@ class PasswordResetController(WebisoderController):
 @view_defaults(route_name="search", renderer="templates/search.pt")
 class SearchController(WebisoderController):
 
+	def __init__(self, request):
+
+		super(SearchController, self).__init__(request)
+		self.backend = TVDBWrapper
+
 	@view_config(context=ValidationFailure)
 	def failure(self):
 
@@ -393,22 +455,16 @@ class SearchController(WebisoderController):
 		return res
 
 	@view_config(request_method="POST", permission="view")
-	def post(self, tvdb=Tvdb):
+	def post(self):
 
 		controls = self.request.POST.items()
 		form = Form(SearchForm())
 		data = form.validate(controls)
 
-		result = []
 		search = data.get("search")
 
-		class TVDBSearch(BaseUI):
-			def selectSeries(self, allSeries):
-				result.extend(allSeries)
-				return BaseUI.selectSeries(self, allSeries)
-
-		tv = tvdb(custom_ui=TVDBSearch)
-		tv[search]
+		engine = self.backend()
+		result = engine.search(search)
 
 		return { "shows": result, "search": search }
 
