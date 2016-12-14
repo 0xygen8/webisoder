@@ -14,9 +14,9 @@ th
 	display: none;
 }
 
-form.login
+.login
 {
-	max-width: 330px;
+	max-width: 400px;
 	padding: 15px;
 	margin: 0 auto;
 }

@@ -14,39 +14,35 @@
 	</div>
 </nav>
 
-<div metal:fill-slot="main" class="container" tal:define="errors form_errors|{}">
-	<form method="post" action="${request.route_url('register')}" class="login">
-		<div class="panel panel-default">
-			<div class="panel-heading">User registration</div>
-			<div class="panel-body">
-				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-				<div class="form-group">
-					<div tal:omit-tag="'name' not in errors" class="has-error">
-						<label for="inputName" class="sr-only">Your user name</label>
-						<div class="input-group">
-							<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>
-							<input class="form-control" type="text" name="name" id="inputName" tal:attributes="value name|None" placeholder="User name" autofocus required />
-						</div>
-						<span class="help-block" tal:condition="'name' in errors">${errors.get('name')}</span>
-					</div>
+<div metal:fill-slot="main" class="container login" tal:define="errors form_errors|{}">
+	<h2>User registration</h2>
+	<hr/>
+	<form method="post" action="${request.route_url('register')}">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<div class="form-group">
+			<div tal:omit-tag="'name' not in errors" class="has-error">
+				<label for="inputName" class="sr-only">Your user name</label>
+				<div class="input-group">
+					<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>
+					<input class="form-control" type="text" name="name" id="inputName" tal:attributes="value name|None" placeholder="User name" autofocus required />
 				</div>
-				<div class="form-group">
-					<div tal:omit-tag="'email' not in errors" class="has-error">
-						<label for="inputName" class="sr-only">Your e-mail addres</label>
-						<div class="input-group">
-							<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
-							<input class="form-control" type="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
-						</div>
-						<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
-					</div>
-				</div>
-				<button type="submit" class="btn btn-primary">Sign up</button>
-			</div>
-			<div class="panel-footer">
-				<a href="${request.route_url('login')}">Login as existing user</a>
+				<span class="help-block" tal:condition="'name' in errors">${errors.get('name')}</span>
 			</div>
 		</div>
+		<div class="form-group">
+			<div tal:omit-tag="'email' not in errors" class="has-error">
+				<label for="inputName" class="sr-only">Your e-mail addres</label>
+				<div class="input-group">
+					<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
+					<input class="form-control" type="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+				</div>
+				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+			</div>
+		</div>
+		<button type="submit" class="btn btn-primary">Sign up</button>
 	</form>
+	<hr/>
+	<p><a href="${request.route_url('login')}">Login as existing user</a></p>
 </div>
 
 </html>
