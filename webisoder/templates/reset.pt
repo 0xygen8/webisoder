@@ -26,34 +26,38 @@
 	<br/>
 	<form method="post" action="${request.route_url('reset_password', key=key)}">
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-		<div class="form-group">
-			<div tal:omit-tag="'password' not in errors" class="has-error">
-				<label for="inputPw" class="sr-only">Old password</label>
-				<div class="input-group">
-					<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
-					<input type="password" name="password" class="form-control" id="inputPw" placeholder="New password" required autofocus />
+		<div class="row">
+			<div class="col-md-4">
+				<div class="form-group">
+					<div tal:omit-tag="'password' not in errors" class="has-error">
+						<label for="inputPw" class="sr-only">Old password</label>
+						<div class="input-group">
+							<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
+							<input type="password" name="password" class="form-control" id="inputPw" placeholder="New password" required autofocus />
+						</div>
+						<span class="help-block" tal:omit-tag="'password' not in errors">${errors.get('password')}</span>
+					</div>
 				</div>
-				<span class="help-block" tal:omit-tag="'password' not in errors">${errors.get('password')}</span>
-			</div>
-		</div>
-		<div class="form-group">
-			<div tal:omit-tag="'verify' not in errors" class="has-error">
-				<label for="inputPwVerify" class="sr-only">Verify password</label>
-				<div class="input-group">
-					<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
-					<input class="form-control" type="password" name="verify" id="inputPwVerify" placeholder="Verify password" required />
+				<div class="form-group">
+					<div tal:omit-tag="'verify' not in errors" class="has-error">
+						<label for="inputPwVerify" class="sr-only">Verify password</label>
+						<div class="input-group">
+							<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>
+							<input class="form-control" type="password" name="verify" id="inputPwVerify" placeholder="Verify password" required />
+						</div>
+						<span class="help-block" tal:omit-tag="'verify' not in errors">${errors.get('verify')}</span>
+					</div>
 				</div>
-				<span class="help-block" tal:omit-tag="'verify' not in errors">${errors.get('verify')}</span>
-			</div>
-		</div>
-		<div class="form-group">
-			<div tal:omit-tag="'email' not in errors" class="has-error">
-				<label for="email" class="sr-only">Your e-mail addres</label>
-				<div class="input-group">
-					<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
-					<input class="form-control" type="email" id="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+				<div class="form-group">
+					<div tal:omit-tag="'email' not in errors" class="has-error">
+						<label for="email" class="sr-only">Your e-mail addres</label>
+						<div class="input-group">
+							<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
+							<input class="form-control" type="email" id="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+						</div>
+						<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+					</div>
 				</div>
-				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
 			</div>
 		</div>
 

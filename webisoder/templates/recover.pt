@@ -23,14 +23,18 @@
 	<br/>
 	<form method="post" action="${request.route_url('recover')}">
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-		<div class="form-group">
-			<div tal:omit-tag="'email' not in errors" class="has-error">
-				<label for="email" class="sr-only">Your e-mail addres</label>
-				<div class="input-group">
-					<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
-					<input class="form-control" type="email" id="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+		<div class="row">
+			<div class="col-md-4">
+				<div class="form-group">
+					<div tal:omit-tag="'email' not in errors" class="has-error">
+						<label for="email" class="sr-only">Your e-mail addres</label>
+						<div class="input-group">
+							<div class="input-group-addon"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span></div>
+							<input class="form-control" type="email" id="email" name="email" tal:attributes="value email|None" placeholder="Email address" required />
+						</div>
+						<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+					</div>
 				</div>
-				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
 			</div>
 		</div>
 		<button type="submit" class="btn btn-primary">Recover</button>
