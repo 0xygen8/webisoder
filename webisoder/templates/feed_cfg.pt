@@ -5,7 +5,13 @@
 <ul metal:fill-slot="navitems" class="nav navbar-nav">
 	<li><a href="${request.route_url('shows')}">Shows</a></li>
 	<li><a href="${request.route_url('episodes')}">Episodes</a></li>
-	<li class="active"><a href="${request.route_url('settings_feed')}">Feeds</a></li>
+	<li class="dropdown active">
+		<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Feeds <span class="caret"></span></a>
+		<ul class="dropdown-menu">
+			<li><a href="${request.route_url('settings_feed')}">Feed settings</a></li>
+			<li><a href="${request.route_url('settings_token')}">Access token</a></li>
+		</ul>
+	</li>
 </ul>
 
 <div metal:fill-slot="main" class="container">
@@ -14,16 +20,7 @@
 	</div>
 
 	<div class="row">
-		<div class="col-sm-2">
-			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Feeds</strong></div>
-				<div class="list-group">
-					<a class="list-group-item active" href="${request.route_url('settings_feed')}">Feed settings</a>
-					<a class="list-group-item" href="${request.route_url('settings_token')}">Access token</a>
-				</div>
-			</div>
-		</div>
-		<div class="col-sm-10">
+		<div class="col-sm-12">
 			<div class="panel panel-default">
 				<div class="panel-heading"><strong>Feed settings</strong></div>
 				<div class="panel-body">
