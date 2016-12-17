@@ -18,7 +18,7 @@ from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
 from datetime import date
 
-from sqlalchemy import Table, ForeignKey, Index
+from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint
 from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -33,9 +33,20 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 subscriptions = Table('subscriptions', Base.metadata,
-	Column('show_id', Integer, ForeignKey('shows.show_id')),
-	Column('user_name', Text, ForeignKey('users.user_name')))
+	Column('show_id', Integer, ForeignKey('shows.show_id'),
+		nullable=False),
+	Column('user_name', Text(30), ForeignKey('users.user_name'),
+		nullable=False),
+	UniqueConstraint("show_id", "user_name")
+)
 
+# This is unused in webisoder
+meta = Table("meta", Base.metadata,
+	Column("key", Text),
+	Column("value", Text))
+
+# Also unused
+# news = Table("news", ...
 
 class User(Base):
 
@@ -118,7 +129,7 @@ class Show(Base):
 	__tablename__ = 'shows'
 	id = Column('show_id', Integer, primary_key=True)
 	name = Column('show_name', Text)
-	url = Column(Text)
+	url = Column(Text, unique=True)
 	updated = Column(DateTime)
 	enabled = Column(Boolean)
 	status = Column(Integer)

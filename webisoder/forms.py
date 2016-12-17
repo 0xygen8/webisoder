@@ -73,7 +73,7 @@ class LoginForm(MappingSchema):
 
 class SignupForm(MappingSchema):
 
-	name = SchemaNode(String())
+	name = SchemaNode(String(), validator=Length(max=30))
 	email = SchemaNode(String(), validator=Email())
 
 class SearchForm(MappingSchema):

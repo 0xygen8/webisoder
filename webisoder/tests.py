@@ -531,6 +531,28 @@ class TestNewUserSignup(WebisoderTest):
 		self.assertIn("name", errors)
 		self.assertEqual("Required", errors.get("name"))
 
+		# User name too long
+		request = testing.DummyRequest(post={
+			"name": "abcde67890abcde67890abcde67890a",
+			"email": "newuser1@example.org"
+		})
+		ctl = RegistrationController(request)
+
+		with self.assertRaises(ValidationFailure) as ctx:
+			ctl.post()
+
+		mailer = get_mailer(request)
+		self.assertEqual(len(mailer.outbox), 0)
+
+		request.exception = ctx.exception
+		res = ctl.failure()
+
+		errors = res.get("form_errors")
+		self.assertIsNotNone(errors)
+		self.assertNotIn("email", errors)
+		self.assertEqual("Longer than maximum length 30",
+							errors.get("name"))
+
 	def testInvalidMailAddress(self):
 
 		# Invalid address

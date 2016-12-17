@@ -24,7 +24,7 @@
 				<label for="inputName" class="sr-only">Your user name</label>
 				<div class="input-group">
 					<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>
-					<input class="form-control" type="text" name="name" id="inputName" tal:attributes="value name|None" placeholder="User name" autofocus required />
+					<input class="form-control" type="text" name="name" id="inputName" tal:attributes="value name|None" placeholder="User name" maxlength="30" autofocus required />
 				</div>
 				<span class="help-block" tal:condition="'name' in errors">${errors.get('name')}</span>
 			</div>
