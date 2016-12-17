@@ -42,7 +42,7 @@ subscriptions = Table('subscriptions', Base.metadata,
 
 # This is unused in webisoder
 meta = Table("meta", Base.metadata,
-	Column("key", Text),
+	Column("key", Text, primary_key=True),
 	Column("value", Text))
 
 # Also unused
@@ -124,6 +124,33 @@ class User(Base):
 	password = property(None, __set_password)
 
 
+class Episode(Base):
+
+	__tablename__ = "episodes"
+	show_id = Column(Integer, ForeignKey("shows.show_id"), primary_key=True)
+	num = Column(Integer, primary_key=True)
+	airdate = Column(Date)
+	season = Column(Integer, primary_key=True)
+	title = Column(Text)
+	totalnum = Column(Integer)
+	prodnum = Column(Text)
+
+	def render(self, format):
+
+		format = format.replace("##SHOW##", self.show.name)
+		format = format.replace("##SEASON##", "%d" % self.season)
+		format = format.replace("##SEASON2##", "%02d" % self.season)
+		format = format.replace("##EPISODE##", "%02d" % self.num)
+		format = format.replace("##TITLE##", "%s" % self.title)
+
+		return format
+
+	def __str__(self):
+
+		return "%s S%02dE%02d: %s" % (self.show.name,
+					self.season, self.num, self.title)
+
+
 class Show(Base):
 
 	__tablename__ = 'shows'
@@ -135,6 +162,7 @@ class Show(Base):
 	status = Column(Integer)
 
 	users = relationship(User, secondary=subscriptions, backref='shows')
+	episodes = relationship(Episode, cascade="all,delete", backref="show")
 
 	def __lt__(self, other):
 
@@ -160,34 +188,6 @@ class Show(Base):
 
 	next_episode = property(__get_next_episode)
 
-
-class Episode(Base):
-
-	__tablename__ = 'episodes'
-	show_id = Column(Integer, ForeignKey('shows.show_id'), primary_key=True)
-	num = Column(Integer, primary_key=True)
-	airdate = Column(Date)
-	season = Column(Integer, primary_key=True)
-	title = Column(Text)
-	totalnum = Column(Integer)
-	prodnum = Column(Text)
-
-	show = relationship(Show, backref='episodes')
-
-	def render(self, format):
-
-		format = format.replace('##SHOW##', self.show.name)
-		format = format.replace('##SEASON##', "%d" % self.season)
-		format = format.replace('##SEASON2##', "%02d" % self.season)
-		format = format.replace('##EPISODE##', "%02d" % self.num)
-		format = format.replace('##TITLE##', "%s" % self.title)
-
-		return format
-
-	def __str__(self):
-
-		return '%s S%02dE%02d: %s' % (self.show.name,
-					self.season, self.num, self.title)
 
 Index('user_index', User.name, unique=True)
 Index('show_id', Show.id, unique=True)

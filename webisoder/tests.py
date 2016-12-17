@@ -29,8 +29,7 @@ from tvdb_api import tvdb_shownotfound
 
 from deform.exception import ValidationFailure
 
-from .models import DBSession
-from .models import Base, Show, Episode, User
+from .models import DBSession, Base, Show, Episode, User, subscriptions
 
 from .views import IndexController, RegistrationController, TokenResetController
 from .views import ShowsController, EpisodesController, PasswordChangeController
@@ -437,6 +436,56 @@ class WebisoderModelTests(unittest.TestCase):
 			ep = show.next_episode
 
 		self.assertEqual(ep, ep2)
+
+	def testSubscriptionCascades(self):
+
+		show1 = DBSession.query(Show).get(1)
+		show2 = DBSession.query(Show).get(2)
+
+		user1 = DBSession.query(User).get("user1")
+		user2 = DBSession.query(User).get("user2")
+
+		self.assertEqual(0, len(user1.shows))
+
+		user1.shows.append(show1)
+		user1b = DBSession.query(User).get("user1")
+		self.assertEqual(1, len(user1b.shows))
+
+		subs = DBSession.query(subscriptions)
+		self.assertEqual(1, subs.count())
+
+		DBSession.delete(user1b)
+		subs = DBSession.query(subscriptions)
+		self.assertEqual(0, subs.count())
+
+		users = DBSession.query(User)
+		self.assertEqual(2, users.count())
+		shows = DBSession.query(Show)
+		self.assertEqual(2, shows.count())
+
+		user2.shows.append(show2)
+		user2b = DBSession.query(User).get("user2")
+		self.assertEqual(1, len(user2b.shows))
+
+		subs = DBSession.query(subscriptions)
+		self.assertEqual(1, subs.count())
+
+		DBSession.delete(show2)
+		subs = DBSession.query(subscriptions)
+		self.assertEqual(0, subs.count())
+
+		users = DBSession.query(User)
+		self.assertEqual(2, users.count())
+		shows = DBSession.query(Show)
+		self.assertEqual(1, shows.count())
+
+	def testEpisodesCascade(self):
+
+		self.assertEqual(3, DBSession.query(Episode).count())
+
+		show1 = DBSession.query(Show).get(1)
+		DBSession.delete(show1)
+		self.assertEqual(1, DBSession.query(Episode).count())
 
 
 class TestNewUserSignup(WebisoderTest):
