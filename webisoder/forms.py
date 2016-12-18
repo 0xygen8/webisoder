@@ -64,7 +64,7 @@ class UnSubscribeForm(MappingSchema):
 
 class SubscribeForm(MappingSchema):
 
-	url = SchemaNode(Integer(), validator=Range(min=1))
+	url = SchemaNode(String(), validator=Length(min=1))
 
 class LoginForm(MappingSchema):
 

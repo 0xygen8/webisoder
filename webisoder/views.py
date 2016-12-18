@@ -42,6 +42,9 @@ class TVDBWrapper(object):
 
 	def getByURL(self, url):
 
+		if not url.isdigit():
+			raise tvdb_shownotfound()
+
 		tv = Tvdb()
 		return tv[int(url)]
 

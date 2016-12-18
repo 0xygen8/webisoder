@@ -100,6 +100,9 @@ class MockTVDB(object):
 
 	def getByURL(self, url):
 
+		if not url.isdigit():
+			raise tvdb_shownotfound()
+
 		id = int(url)
 		show = self.shows.get(id)
 
@@ -1468,18 +1471,11 @@ class TestShowsView(WebisoderTest):
 		with self.assertRaises(ValidationFailure):
 			ctl.subscribe()
 
-		request = testing.DummyRequest(post={"url": "0"})
-		request.session["auth.userid"] = "testuser1"
-		ctl = ShowsController(request)
-		ctl.backend = MockTVDB
-		with self.assertRaises(ValidationFailure):
-			ctl.subscribe()
-
 		request = testing.DummyRequest(post={"url": "a"})
 		request.session["auth.userid"] = "testuser1"
 		ctl = ShowsController(request)
 		ctl.backend = MockTVDB
-		with self.assertRaises(ValidationFailure) as ctx:
+		with self.assertRaises(tvdb_shownotfound) as ctx:
 			ctl.subscribe()
 
 		request.exception = ctx.exception
