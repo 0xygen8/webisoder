@@ -1731,6 +1731,55 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual('ep5', ep[1].title)
 		self.assertEqual('ep2', ep[2].title)
 
+	def testEpisodesOrder(self):
+
+		today = date.today()
+
+		show1 = Show()
+		show2 = Show()
+
+		DBSession.add(show1)
+		DBSession.add(show2)
+
+		ep1 = Episode(show=show1, num=1, season=1, title='ep11')
+		ep2 = Episode(show=show1, num=2, season=1, title='ep12')
+		ep3 = Episode(show=show1, num=3, season=1, title='ep13')
+		ep4 = Episode(show=show2, num=1, season=1, title='ep21')
+		ep5 = Episode(show=show2, num=2, season=1, title='ep22')
+
+		ep1.airdate = today - timedelta(1)
+		ep2.airdate = today
+		ep3.airdate = today + timedelta(1)
+		ep4.airdate = today - timedelta(2)
+		ep5.airdate = today + timedelta(2)
+
+		DBSession.add(ep1)
+		DBSession.add(ep2)
+		DBSession.add(ep3)
+		DBSession.add(ep4)
+		DBSession.add(ep5)
+
+		user = User(name='testuser2')
+		DBSession.add(user)
+
+		user.shows.append(show1)
+		user.shows.append(show2)
+		user.days_back = 2
+
+		request = testing.DummyRequest()
+		request.session['auth.userid'] = 'testuser2'
+		ctl = EpisodesController(request)
+		res = ctl.get()
+
+		episodes = res.get("episodes", [])
+		self.assertEqual(5, len(episodes))
+
+		self.assertEqual("ep21", episodes[0].title)
+		self.assertEqual("ep11", episodes[1].title)
+		self.assertEqual("ep12", episodes[2].title)
+		self.assertEqual("ep13", episodes[3].title)
+		self.assertEqual("ep22", episodes[4].title)
+
 	def testFeed(self):
 
 		request = testing.DummyRequest()

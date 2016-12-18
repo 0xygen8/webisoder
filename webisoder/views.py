@@ -488,9 +488,13 @@ class EpisodesController(WebisoderController):
 
 		user = DBSession.query(User).get(uid)
 		then = date.today() - timedelta(int(user.days_back) or 0)
+
 		episodes = [e for e in user.episodes if e.airdate >= then]
 
-		return { "episodes": episodes, "user": user }
+		return {
+			"episodes": sorted(episodes, key=lambda ep: ep.airdate),
+			"user": user
+		}
 
 	@view_config(route_name="feed", renderer="templates/feed.pt")
 	@view_config(route_name="ical", renderer="templates/ical.pt")
