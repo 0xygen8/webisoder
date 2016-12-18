@@ -35,11 +35,13 @@
 			<tr tal:repeat="show sorted(subscribed)">
 				<td>
 					<span class="glyphicon glyphicon-film" aria-hidden="true"></span>
-					${show.name}
+					<a href="https://thetvdb.com/?tab=series&id=${show.url}">${show.name}</a>
 				</td>
 				<td>
-					<span tal:condition="show.status">${show.status}</span>
-					<span tal:condition="not:show.status" class="label label-warning">Unknown</span>
+					<span tal:condition="show.status == 1" class="label label-success">Running</span>
+					<span tal:condition="show.status == 2" class="label label-info">Paused</span>
+					<span tal:condition="show.status == 3" class="label label-default">Ended</span>
+					<span tal:condition="show.status not in [1,2,3]" class="label label-warning">Unknown</span>
 				</td>
 				<td tal:define="next show.next_episode">
 					<span tal:condition="next">${next.airdate.strftime('%B %d')}</span>
