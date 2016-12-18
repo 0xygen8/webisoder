@@ -23,6 +23,7 @@ from datetime import date, timedelta
 
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest, HTTPUnauthorized
 from pyramid.httpexceptions import HTTPNotFound
+from pyramid.security import remember, forget
 from pyramid.view import view_config, view_defaults
 
 from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound, tvdb_error
@@ -252,14 +253,13 @@ class AuthController(WebisoderController):
 		if not user.authenticate(password):
 			raise LoginFailure()
 
-		self.request.session["auth.userid"] = name
+		remember(self.request, name)
 		return self.redirect("shows")
 
 	@view_config(route_name="logout", permission="view")
 	def logout(self):
 
-		self.request.session.clear()
-		self.flash("info", "Successfully signed out. Goodbye.")
+		forget(self.request)
 		return self.redirect("home")
 
 

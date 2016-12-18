@@ -1351,10 +1351,6 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		self.assertTrue(res.location.endswith("__HOME__"))
 		self.assertNotIn("auth.userid", request.session)
 
-		msg = request.session.pop_flash("info")
-		self.assertEqual(1, len(msg))
-		self.assertEqual("Successfully signed out. Goodbye.", msg[0])
-
 
 class TestShowsView(WebisoderTest):
 
