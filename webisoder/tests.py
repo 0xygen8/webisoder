@@ -18,6 +18,7 @@ import unittest
 import transaction
 import re
 
+from decimal import Decimal
 from datetime import date, timedelta
 from pyramid import testing
 from pyramid_mailer import get_mailer
@@ -1691,6 +1692,15 @@ class TestShowsView(WebisoderTest):
 		# 1 day back
 		user = DBSession.query(User).get('testuser1')
 		user.days_back = 1
+		ctl = EpisodesController(request)
+		res = ctl.get()
+
+		ep = res.get('episodes', [])
+		self.assertEqual(2, len(ep))
+
+		# 1 day back (Decimal type)
+		user = DBSession.query(User).get('testuser1')
+		user.days_back = Decimal(1)
 		ctl = EpisodesController(request)
 		res = ctl.get()
 

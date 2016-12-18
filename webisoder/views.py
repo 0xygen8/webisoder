@@ -475,7 +475,7 @@ class EpisodesController(WebisoderController):
 	def episodes(self, uid):
 
 		user = DBSession.query(User).get(uid)
-		then = date.today() - timedelta(user.days_back or 0)
+		then = date.today() - timedelta(int(user.days_back) or 0)
 		episodes = [e for e in user.episodes if e.airdate >= then]
 
 		return { "episodes": episodes, "user": user }

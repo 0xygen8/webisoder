@@ -19,7 +19,7 @@ from string import digits, ascii_lowercase, ascii_uppercase
 from datetime import date
 
 from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint
-from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import relationship
@@ -48,6 +48,71 @@ meta = Table("meta", Base.metadata,
 # Also unused
 # news = Table("news", ...
 
+
+class Episode(Base):
+
+	__tablename__ = "episodes"
+	show_id = Column(Integer, ForeignKey("shows.show_id"), primary_key=True)
+	num = Column(Integer, primary_key=True)
+	airdate = Column(Date)
+	season = Column(Integer, primary_key=True)
+	title = Column(Text)
+	totalnum = Column(Integer)
+	prodnum = Column(Text)
+
+	def render(self, format):
+
+		format = format.replace("##SHOW##", self.show.name)
+		format = format.replace("##SEASON##", "%d" % self.season)
+		format = format.replace("##SEASON2##", "%02d" % self.season)
+		format = format.replace("##EPISODE##", "%02d" % self.num)
+		format = format.replace("##TITLE##", "%s" % self.title)
+
+		return format
+
+	def __str__(self):
+
+		return "%s S%02dE%02d: %s" % (self.show.name,
+					self.season, self.num, self.title)
+
+
+class Show(Base):
+
+	__tablename__ = 'shows'
+	id = Column('show_id', Integer, primary_key=True)
+	name = Column('show_name', Text)
+	url = Column(Text, unique=True)
+	updated = Column(DateTime)
+	enabled = Column(Boolean)
+	status = Column(Integer)
+
+	episodes = relationship(Episode, cascade="all,delete", backref="show")
+
+	def __lt__(self, other):
+
+		return self.name.__lt__(other.name)
+
+	def __str__(self):
+
+		return "Webisoder show '%s'" % self.name
+
+	def __get_next_episode(self):
+
+		today = date.today()
+		episodes = self.episodes
+
+		for ep in episodes:
+			if not ep.airdate:
+				continue
+
+			if ep.airdate >= today:
+				return ep
+
+		return None
+
+	next_episode = property(__get_next_episode)
+
+
 class User(Base):
 
 	__tablename__ = 'users'
@@ -57,7 +122,7 @@ class User(Base):
 	signup = Column(DateTime)
 	verified = Column(Boolean)
 	token = Column(Text(12))
-	days_back = Column(Integer)
+	days_back = Column(Numeric)
 	link_provider = Column(Text(20))
 	link_format = Column(Text)
 	site_news = Column(Boolean)
@@ -65,6 +130,8 @@ class User(Base):
 	date_offset = Column(Integer)
 	last_login = Column(DateTime)
 	recover_key = Column(Text(30))
+
+	shows = relationship(Show, secondary=subscriptions, backref="users")
 
 	def __set_password(self, plain):
 
@@ -122,71 +189,6 @@ class User(Base):
 
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)
-
-
-class Episode(Base):
-
-	__tablename__ = "episodes"
-	show_id = Column(Integer, ForeignKey("shows.show_id"), primary_key=True)
-	num = Column(Integer, primary_key=True)
-	airdate = Column(Date)
-	season = Column(Integer, primary_key=True)
-	title = Column(Text)
-	totalnum = Column(Integer)
-	prodnum = Column(Text)
-
-	def render(self, format):
-
-		format = format.replace("##SHOW##", self.show.name)
-		format = format.replace("##SEASON##", "%d" % self.season)
-		format = format.replace("##SEASON2##", "%02d" % self.season)
-		format = format.replace("##EPISODE##", "%02d" % self.num)
-		format = format.replace("##TITLE##", "%s" % self.title)
-
-		return format
-
-	def __str__(self):
-
-		return "%s S%02dE%02d: %s" % (self.show.name,
-					self.season, self.num, self.title)
-
-
-class Show(Base):
-
-	__tablename__ = 'shows'
-	id = Column('show_id', Integer, primary_key=True)
-	name = Column('show_name', Text)
-	url = Column(Text, unique=True)
-	updated = Column(DateTime)
-	enabled = Column(Boolean)
-	status = Column(Integer)
-
-	users = relationship(User, secondary=subscriptions, backref='shows')
-	episodes = relationship(Episode, cascade="all,delete", backref="show")
-
-	def __lt__(self, other):
-
-		return self.name.__lt__(other.name)
-
-	def __str__(self):
-
-		return "Webisoder show '%s'" % self.name
-
-	def __get_next_episode(self):
-
-		today = date.today()
-		episodes = self.episodes
-
-		for ep in episodes:
-			if not ep.airdate:
-				continue
-
-			if ep.airdate >= today:
-				return ep
-
-		return None
-
-	next_episode = property(__get_next_episode)
 
 
 Index('user_index', User.name, unique=True)
