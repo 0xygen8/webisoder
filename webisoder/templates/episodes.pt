@@ -35,7 +35,7 @@
 		<div tal:repeat="episode episodes" tal:omit-tag="">
 			<div tal:condition="episode.airdate > date.today()" tal:omit-tag="">
 				<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
-				<li class="list-group-item">${episode}</li>
+				<li class="list-group-item"><a href="${episode.render(user.link_format)}">${episode}</a></li>
 				<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
 			</div>
 		</div>
