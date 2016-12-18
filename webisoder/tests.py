@@ -1195,7 +1195,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		request = testing.DummyRequest(post={
 			"user": "testuser2",
 			"password": "secret"
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 
@@ -1218,7 +1218,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		request = testing.DummyRequest(post={
 			"user": "",
 			"password": "wrong"
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 
@@ -1240,7 +1240,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 		request = testing.DummyRequest(post={
 			"password": "wrong"
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 
@@ -1263,7 +1263,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		request = testing.DummyRequest(post={
 			"user": "testuser100",
 			"password": "wrong"
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 
@@ -1285,7 +1285,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		request = testing.DummyRequest(post={
 			"user": "testuser100",
 			"password": ""
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 
@@ -1307,7 +1307,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 		request = testing.DummyRequest(post={
 			"user": "testuser100"
-		})
+		}, remote_addr="nowhere")
 
 		view = AuthController(request)
 

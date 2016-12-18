@@ -232,6 +232,8 @@ class AuthController(WebisoderController):
 	@view_config(context=LoginFailure)
 	def failure(self):
 
+		log.warning("Failed login from %s" % self.request.remote_addr)
+
 		self.flash("warning", "Login failed")
 		return self.request.POST
 
@@ -287,6 +289,8 @@ class RegistrationController(WebisoderController):
 	@view_config(context=MailError)
 	def smtp_failure(self):
 
+		log.critical("SMTP failure: %s" % self.request.exception)
+
 		DBSession.rollback()
 		self.flash("danger", "Failed to send message. Your account was "
 								"not created.")
@@ -341,6 +345,8 @@ class PasswordRecoveryController(WebisoderController):
 
 	@view_config(context=MailError)
 	def smtp_failure(self):
+
+		log.critical("SMTP failure: %s" % self.request.exception)
 
 		DBSession.rollback()
 		self.flash("danger", "Failed to send message. Your password "

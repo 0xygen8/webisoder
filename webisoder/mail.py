@@ -39,8 +39,8 @@ class WelcomeMessage(object):
 
 		try:
 			mailer.send_immediately(message, fail_silently=False)
-		except Exception:
-			raise MailError()
+		except Exception as e:
+			raise MailError(e)
 
 
 class PasswordRecoveryMessage(object):
@@ -59,5 +59,5 @@ class PasswordRecoveryMessage(object):
 
 		try:
 			mailer.send_immediately(message, fail_silently=False)
-		except Exception:
-			raise MailError()
+		except Exception as e:
+			raise MailError(e)

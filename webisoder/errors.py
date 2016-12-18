@@ -22,7 +22,13 @@ class LoginFailure(Exception):
 
 class MailError(Exception):
 
-	pass
+	def __init__(self, error):
+
+		self.error = error
+
+	def __str__(self):
+
+		return str(self.error)
 
 
 class SubscriptionFailure(Exception):
