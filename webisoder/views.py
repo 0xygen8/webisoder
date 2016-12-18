@@ -253,6 +253,9 @@ class AuthController(WebisoderController):
 		if not user.authenticate(password):
 			raise LoginFailure()
 
+		# Create new sessions for authenticated users
+		self.request.session.invalidate()
+
 		remember(self.request, name)
 		return self.redirect("shows")
 

@@ -1351,6 +1351,26 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		self.assertTrue(res.location.endswith("__HOME__"))
 		self.assertNotIn("auth.userid", request.session)
 
+	def testLoginCreatesNewSession(self):
+
+		request = testing.DummyRequest()
+		ctl = IndexController(request)
+		ctl.get()
+
+		session = request.session
+		session["someval"] = 1
+
+		request = testing.DummyRequest(post={
+			"user": "testuser100",
+			"password": "secret"
+		})
+
+		request.session = session
+		view = AuthController(request)
+		view.login_post()
+
+		self.assertNotIn("someval", request.session)
+
 
 class TestShowsView(WebisoderTest):
 
