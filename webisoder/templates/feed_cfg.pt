@@ -30,7 +30,7 @@
 							<label for="inputDays">Maximum age</label>
 							<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
 								<select class="form-control" name="days_back" id="inputDays">
-									<option tal:repeat="value range(1,8)" tal:attributes="selected user.days_back == value">${value}</option>
+									<option tal:repeat="value range(1,8)" tal:attributes="selected 'selected' if user.days_back == value else None">${value}</option>
 								</select>
 								<div class="input-group-addon">days</div>
 							</div>
@@ -45,7 +45,7 @@
 							<label for="inputOffset">Date offset</label>
 							<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
 								<select class="form-control" name="date_offset" id="inputOffset">
-									<option tal:repeat="value range(0,3)" tal:attributes="selected user.date_offset == value">${value}</option>
+									<option tal:repeat="value range(0,3)" tal:attributes="selected 'selected' if user.date_offset == value else None">${value}</option>
 								</select>
 								<div class="input-group-addon">days</div>
 							</div>
