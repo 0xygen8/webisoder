@@ -47,9 +47,9 @@
 			</h4>
 			<p>
 				<small tal:condition="next">
-					Next episode airs on ${next.airdate.strftime('%B %d')}
+					Next episode airs on ${next.airdate.strftime('%B %d, %Y')}
 				</small>
-				<small tal:condition="not:next">
+				<small tal:condition="not:next" class="text-muted">
 					No upcoming episodes
 				</small>
 			</p>
