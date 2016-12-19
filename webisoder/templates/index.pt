@@ -52,7 +52,7 @@
 		<div class="col-md-4">
 			<h2>Feed</h2>
 			<p>Webisoder makes your TV schedule available as a <a href="http://en.wikipedia.org/wiki/Web_feed">web feed</a> for your favourite <a href="https://en.wikipedia.org/wiki/Feed_aggregator">feed reader</a> as well as an <a href="https://en.wikipedia.org/wiki/ICalendar">iCalendar</a> to be used in any modern calendar application.</p>
-			<p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p> <!-- TODO -->
+			<p><a class="btn btn-default" href="http://www.whatisrss.com/" role="button">Learn more &raquo;</a></p>
 		</div>
 		<div class="col-md-4">
 			<h2>TV data</h2>
