@@ -18,10 +18,8 @@
 	<div class="page-header">
 		<h1>Contacting Us</h1>
 	</div>
-	<!-- TODO -->
 	<p>
-		We should add contact information here.
-		<span class="label label-warning">TODO</span>
+		If you have found an issue in webisoder, if you would like to suggest additional features or if you have other ideas on how to improve webisoder, please use the <a href="https://github.com/cockroach/webisoder/issues">issue tracker on github</a> to tell us. Your feedback is important.
 	</p>
 </div>
 
