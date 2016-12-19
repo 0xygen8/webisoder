@@ -12,7 +12,7 @@
 	</li>
 </ul>
 
-<div metal:fill-slot="main" class="container">
+<div metal:fill-slot="main" class="container" id="shows">
 	<div class="page-header">
 		<h1>Manage Your Shows</h1>
 	</div>
@@ -21,41 +21,41 @@
 		<p>You are not currently subscribed to any shows. Use the search form to get started.</p>
 	</div>
 	<div tal:condition="subscribed">
-		<p>This is a list of the shows that you are currently subscribed to. Episodes of these shows will be featured in your web feed and iCalendar.</p>
-		<p>Use the search form to subscribe to additional shows.</p>
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>Show name</th>
-					<th>Status</th>
-					<th>Next episode</th>
-					<th>Options</th>
-				</tr>
-			</thead>
-			<tr tal:repeat="show sorted(subscribed)">
-				<td>
-					<span class="glyphicon glyphicon-film" aria-hidden="true"></span>
-					<a href="https://thetvdb.com/?tab=series&id=${show.url}">${show.name}</a>
-				</td>
-				<td>
+		<p class="lead">This is a list of the shows that you are currently subscribed to. Episodes of these shows will be featured in your web feed and iCalendar.</p>
+	</div>
+	<div tal:omit-tag="" tal:repeat="show sorted(subscribed)">
+	<div class="media">
+		<div class="media-left">
+			<img class="media-object" src="${request.route_url('banners', show_id=show.url)}" alt="${show.name}" />
+		</div>
+		<div class="media-body" tal:define="next show.next_episode">
+			<div class="pull-right">
+				<form method="post" action="${request.route_url('unsubscribe')}">
+					<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+					<input type="hidden" name="show" value="${show.id}" />
+					<button type="submit" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>&nbsp;&nbsp;Unsubscribe</button>
+
+				</form>
+			</div>
+			<h4 class="media-heading"><a href="https://thetvdb.com/?tab=series&id=${show.url}">${show.name}</a>
+				<small>
+					<span tal:condition="not show.status" class="label label-success">Running</span>
 					<span tal:condition="show.status == 1" class="label label-success">Running</span>
 					<span tal:condition="show.status == 2" class="label label-info">Paused</span>
 					<span tal:condition="show.status == 3" class="label label-default">Ended</span>
-					<span tal:condition="show.status not in [1,2,3]" class="label label-warning">Unknown</span>
-				</td>
-				<td tal:define="next show.next_episode">
-					<span tal:condition="next">${next.airdate.strftime('%B %d')}</span>
-					<span tal:condition="not:next" class="text-warning">Unknown</span>
-				</td>
-				<td>
-					<form method="post" action="${request.route_url('unsubscribe')}">
-						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<input type="hidden" name="show" value="${show.id}" />
-						<input type="submit" class="btn btn-primary btn-xs" value="Unsubscribe" />
-					</form>
-				</td>
-			</tr>
-		</table>
+				</small>
+			</h4>
+			<p>
+				<small tal:condition="next">
+					Next episode airs on ${next.airdate.strftime('%B %d')}
+				</small>
+				<small tal:condition="not:next">
+					No upcoming episodes
+				</small>
+			</p>
+		</div>
+	</div>
+	<hr />
 	</div>
 </div>
 

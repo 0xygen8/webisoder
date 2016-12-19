@@ -20,9 +20,12 @@ import httplib
 from decorator import decorator
 from deform import Form, ValidationFailure
 from datetime import date, timedelta
+from beaker.cache import cache_region
+from urllib2 import urlopen, Request
 
 from pyramid.httpexceptions import HTTPFound, HTTPBadRequest, HTTPUnauthorized
 from pyramid.httpexceptions import HTTPNotFound
+from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.view import view_config, view_defaults
 
@@ -48,6 +51,41 @@ class TVDBWrapper(object):
 
 		tv = Tvdb()
 		return tv[int(url)]
+
+	@cache_region("month")
+	def downloadBanner(self, url):
+
+		req = Request(url)
+		res = urlopen(req)
+		return res.read()
+
+	@cache_region("week")
+	def getBanner(self, url):
+
+		best = None
+		best_rating = 0
+
+		if not url.isdigit():
+			raise tvdb_shownotfound()
+
+		tv = Tvdb(banners = True)
+		show = tv[int(url)]
+
+		banners = show["_banners"]
+		fanart = banners.get("fanart")
+
+		for res in fanart:
+			items = fanart.get(res)
+
+			for id in items:
+				item = items.get(id)
+				path = item.get("_thumbnailpath")
+				rating = float(item.get("rating", 0))
+
+				if rating > best_rating:
+					best = path
+
+		return self.downloadBanner(best)
 
 	def search(self, text):
 
@@ -669,6 +707,25 @@ class PasswordChangeController(WebisoderController):
 		self.flash("info", "Your password has been changed")
 		return self.redirect("settings_pw")
 
+
+@view_defaults(route_name="banners", http_cache=3600)
+class BannerController(WebisoderController):
+
+	def __init__(self, request):
+
+		super(BannerController, self).__init__(request)
+		self.backend = TVDBWrapper
+
+	@view_config(permission="view", request_method="GET")
+	def get(self):
+
+		show_id = self.request.matchdict.get("show_id")
+
+		engine = self.backend()
+
+		res = Response(body=engine.getBanner(show_id))
+		res.content_type = "image/jpeg"
+		return res
 
 # TODO remove this
 @view_config(route_name="setup", renderer="templates/empty.pt",

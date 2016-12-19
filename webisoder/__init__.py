@@ -21,6 +21,8 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.httpexceptions import HTTPFound
 
+from pyramid_beaker import set_cache_regions_from_settings
+
 from .models import DBSession, Base
 
 def redirect_login(request):
@@ -34,6 +36,8 @@ def main(global_config, **settings):
 	engine = engine_from_config(settings, 'sqlalchemy.')
 	DBSession.configure(bind=engine)
 	Base.metadata.bind = engine
+
+	set_cache_regions_from_settings(settings)
 	config = Configurator(settings=settings, root_factory='.resources.Root')
 
 	authentication_policy = SessionAuthenticationPolicy()
@@ -54,6 +58,7 @@ def main(global_config, **settings):
 	config.add_route('recover', '/recover')
 	config.add_route('reset_password', '/recover/{key}')
 	config.add_route('shows', '/shows')
+	config.add_route('banners', '/banners/{show_id}')
 	config.add_route('search', '/search')
 	config.add_route('profile', '/profile')
 	config.add_route('settings_feed', '/settings/feeds')

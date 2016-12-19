@@ -36,7 +36,7 @@ from .views import IndexController, RegistrationController, TokenResetController
 from .views import ShowsController, EpisodesController, PasswordChangeController
 from .views import ProfileController, AuthController, PasswordRecoveryController
 from .views import FeedSettingsController, PasswordResetController
-from .views import SearchController
+from .views import SearchController, BannerController
 
 from .errors import LoginFailure, DuplicateEmail, MailError, SubscriptionFailure
 from .errors import DuplicateUserName, FormError
@@ -91,7 +91,8 @@ class MockTVDB(object):
 				"seriesname": "Show 1359"
 			},
 			79169: {
-				"seriesname": "Seinfeld"
+				"seriesname": "Seinfeld",
+				"banner": "__BANNER__"
 			},
 			80379: {
 				"seriesname": "big bang theory",
@@ -110,6 +111,19 @@ class MockTVDB(object):
 			raise tvdb_shownotfound()
 
 		return show
+
+	def getBanner(self, url):
+
+		if not url.isdigit():
+			raise tvdb_shownotfound()
+
+		id = int(url)
+		show = self.shows.get(id)
+
+		if not show:
+			raise tvdb_shownotfound()
+
+		return show.get("banner")
 
 	def search(self, text):
 
@@ -2725,3 +2739,18 @@ class TestMailClasses(WebisoderTest):
 			msg.send(request, user)
 
 		self.assertEqual(len(mailer.outbox), 0)
+
+
+class TestBanners(WebisoderTest):
+
+	def testBannerController(self):
+
+		request = testing.DummyRequest()
+		request.matchdict["show_id"] = "79169"
+
+		ctl = BannerController(request)
+		ctl.backend = MockTVDB
+		res = ctl.get()
+
+		self.assertEqual("__BANNER__", res.body)
+		self.assertEqual("image/jpeg", res.content_type)

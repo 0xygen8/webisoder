@@ -31,3 +31,21 @@ a.dropdown-toggle:focus + .dropdown-menu
 {
 	display: block;
 }
+
+div#shows img.media-object
+{
+	height: 100px;
+	width: 179px;
+	margin-right: .5em;
+}
+
+div#shows h4 a
+{
+	color: rgb(51, 51, 51);
+}
+
+div#shows h4 small
+{
+	position: relative; top: -3px;
+}
+{
