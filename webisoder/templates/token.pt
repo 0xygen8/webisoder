@@ -19,15 +19,21 @@
 		<h1>Access token</h1>
 	</div>
 
-	<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
+	<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm" class="form-horizontal">
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
-			<label for="inputToken">Your current token</label>
-			<input type="text" name="token" class="form-control" id="inputToken" value="${user.token}" readonly />
-			<span class="help-block">The access token is required to access your feed and your calendar.</span>
+			<label class="col-sm-2 control-label" for="inputToken">Your current token</label>
+			<div class="col-sm-10">
+				<input type="text" name="token" class="form-control" id="inputToken" value="${user.token}" readonly />
+				<span class="help-block">The access token is required to access your feed and your calendar.</span>
+			</div>
 		</div>
-		<p><strong>Warning: </strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</p>
-		<button type="submit" class="btn btn-danger">Reset token</button>
+	 	<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<p><strong>Warning: </strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</p>
+				<button type="submit" class="btn btn-danger">Reset token</button>
+			</div>
+		</div>
 	</form>
 </div>
 

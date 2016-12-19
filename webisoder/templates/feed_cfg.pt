@@ -19,47 +19,52 @@
 		<h1>Feed settings</h1>
 	</div>
 
-	<form method="post" action="${request.route_url('settings_feed')}" tal:define="errors form_errors|{}">
+	<form method="post" action="${request.route_url('settings_feed')}" tal:define="errors form_errors|{}" class="form-horizontal">
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
-			<label for="inputDays">Maximum age</label>
-			<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
-				<select class="form-control" name="days_back" id="inputDays">
-					<option tal:repeat="value range(1,8)" tal:attributes="selected 'selected' if user.days_back == value else None">${value}</option>
-				</select>
-				<div class="input-group-addon">days</div>
+			<label class="col-sm-2 control-label" for="inputDays">Maximum age</label>
+			<div class="col-sm-10">
+				<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
+					<select class="form-control" name="days_back" id="inputDays">
+						<option tal:repeat="value range(1,8)" tal:attributes="selected 'selected' if user.days_back == value else None">${value}</option>
+					</select>
+					<div class="input-group-addon">days</div>
+				</div>
+				<div tal:condition="errors.get('days_back')" class="has-error">
+					<span class="help-block">${errors.get('days_back')}</span>
+				</div>
+				<p class="help-block">
+					Episodes which have first been aired more than the number of days specified here in the past will be hidden.
+				</p>
 			</div>
-			<div tal:condition="errors.get('days_back')" class="has-error">
-				<span class="help-block">${errors.get('days_back')}</span>
-			</div>
-			<p class="help-block">
-				Episodes which have first been aired more than the number of days specified here in the past will be hidden.
-			</p>
 		</div>
 		<div class="form-group">
-			<label for="inputOffset">Date offset</label>
-			<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
-				<select class="form-control" name="date_offset" id="inputOffset">
-					<option tal:repeat="value range(0,3)" tal:attributes="selected 'selected' if user.date_offset == value else None">${value}</option>
-				</select>
-				<div class="input-group-addon">days</div>
+			<label class="col-sm-2 control-label" for="inputOffset">Date offset</label>
+			<div class="col-sm-10">
+				<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
+					<select class="form-control" name="date_offset" id="inputOffset">
+						<option tal:repeat="value range(0,3)" tal:attributes="selected 'selected' if user.date_offset == value else None">${value}</option>
+					</select>
+					<div class="input-group-addon">days</div>
+				</div>
+				<div tal:condition="errors.get('date_offset')" class="has-error">
+					<span class="help-block">${errors.get('date_offset')}</span>
+				</div>
+				<p class="help-block">
+					Entries in your feeds will be shifted by this number of days into the past.
+				</p>
 			</div>
-			<div tal:condition="errors.get('date_offset')" class="has-error">
-				<span class="help-block">${errors.get('date_offset')}</span>
-			</div>
-			<p class="help-block">
-				Entries in your feeds will be shifted by this number of days into the past.
-			</p>
 		</div>
 		<div class="form-group">
-			<label for="inputFormat">Link format</label>
-			<div tal:omit-tag="'link_format' not in errors" class="has-error">
-				<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
-				<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
-			</div>
-			<p class="help-block">
-				Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
-			</p>
+			<label class="col-sm-2 control-label" for="inputFormat">Link format</label>
+			<div class="col-sm-10">
+				<div tal:omit-tag="'link_format' not in errors" class="has-error">
+					<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
+					<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
+				</div>
+				<p class="help-block">
+					Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
+				</p>
 			<ul class="help-block">
 				<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
 				<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
@@ -78,10 +83,15 @@
 			</noscript>
 			<div id="linkPreview">
 				This is a preview using your current setting:
+			</div>
 				<div id="linkPreviewVal" class="well"></div>
 			</div>
 		</div>
-		<button type="submit" class="btn btn-primary">Update settings</button>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<button type="submit" class="btn btn-primary">Update settings</button>
+			</div>
+		</div>
 	</form>
 </div>
 

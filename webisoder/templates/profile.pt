@@ -5,40 +5,52 @@
 		<h1>General settings</h1>
 	</div>
 
-	<form method="post" action="${request.route_url('profile')}" tal:define="errors form_errors|{}">
+	<form method="post" action="${request.route_url('profile')}" tal:define="errors form_errors|{}" class="form-horizontal">
 		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 		<div class="form-group">
-			<label for="inputEmail">Email address</label>
+			<label class="col-sm-2 control-label" for="inputEmail">Email address</label>
 			<div tal:omit-tag="'email' not in errors" class="has-error">
-				<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
-				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+				<div class="col-sm-10">
+					<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
+					<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
+				</div>
 			</div>
 		</div>
 		<div class="form-group">
-			<label for="inputNews">Site news</label>
-			<div class="checkbox">
-				<label>
-					<input tal:attributes="checked 'checked' if user.site_news else None" name="site_news" id="inputNews" type="checkbox" /> Receive site news
-				</label>
+			<label class="col-sm-2 control-label" for="inputNews">Site news</label>
+			<div class="col-sm-10">
+				<div class="checkbox">
+					<label>
+						<input tal:attributes="checked 'checked' if user.site_news else None" name="site_news" id="inputNews" type="checkbox" /> Receive site news
+					</label>
+				</div>
 			</div>
 		</div>
 		<div class="form-group">
-			<label for="inputPassword">Your password</label>
+			<label class="col-sm-2 control-label" for="inputPassword">Your password</label>
 			<div tal:omit-tag="'password' not in errors" class="has-error">
-				<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
-				<span class="help-block" tal:condition="'password' in errors">${errors.get('password')}</span>
+				<div class="col-sm-10">
+					<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
+					<span class="help-block" tal:condition="'password' in errors">${errors.get('password')}</span>
+					<p class="help-block">
+						You need to confirm your password to make changes to these settings.
+					</p>
+				</div>
 			</div>
-			<p class="help-block">
-				You need to confirm your password to make changes to these settings.
-			</p>
 		</div>
 		<div tal:condition="user.signup" class="form-group">
-			<label for="inputEmail">Your account</label>
-			<p class="form-control-static">
-				You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
-			</p>
+			<label class="col-sm-2 control-label" for="inputEmail">Your account</label>
+			<div class="col-sm-10">
+				<p class="form-control-static">
+					You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
+				</p>
+			</div>
 		</div>
-		<button type="submit" class="btn btn-primary">Update settings</button>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<button type="submit" class="btn btn-primary">Update settings</button>
+			</div>
+		</div>
 	</form>
 </div>
 
