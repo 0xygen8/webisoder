@@ -48,3 +48,32 @@ div#shows h4 small
 {
 	position: relative; top: -3px;
 }
+
+body.index
+{
+	background-image: url(../img/splash.jpg);
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+body.index div.jumbotron
+{
+	opacity: .9;
+}
+
+body.index div.container .row > div
+{
+	background-color: #eee;
+	opacity: .9;
+}
+
+body.index .navbar
+{
+	opacity: .9;
+}
+
+.navbar-brand img
+{
+	position: relative;
+	top: -3px;
+}
