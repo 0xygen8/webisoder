@@ -2,43 +2,34 @@
 
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
-		<h1>User profile for ${user.name}</h1>
+		<h1>Change your password</h1>
 	</div>
 
-	<div class="row">
-		<div class="col-sm-12">
-			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Change your password</strong></div>
-				<div class="panel-body">
-					<form method="post" action="${request.route_url('settings_pw')}" tal:define="errors form_errors|{}">
-						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<div class="form-group">
-							<label for="inputOld" class="sr-only">Old password</label>
-							<div class="has-error" tal:omit-tag="'current' not in errors">
-								<input type="password" name="current" class="form-control" id="inputOld" placeholder="Current password" required />
-								<span class="help-block" tal:omit-tag="'current' not in errors">${errors.get('current')}</span>
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="inputNew" class="sr-only">New password</label>
-							<div class="has-error" tal:omit-tag="'new' not in errors">
-								<input type="password" name="new" class="form-control" id="inputNew" placeholder="New password" required />
-								<span class="help-block" tal:omit-tag="'new' not in errors">${errors.get('new')}</span>
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="inputConfirm" class="sr-only">Confirm new password</label>
-							<div class="has-error" tal:omit-tag="'verify' not in errors">
-								<input type="password" name="verify" class="form-control" id="inputConfirm" placeholder="Confirm new password" required />
-								<span class="help-block" tal:omit-tag="'verify' not in errors">${errors.get('verify')}</span>
-							</div>
-						</div>
-						<button type="submit" class="btn btn-primary">Update password</button>
-					</form>
-				</div>
+	<form method="post" action="${request.route_url('settings_pw')}" tal:define="errors form_errors|{}">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<div class="form-group">
+			<label for="inputOld" class="sr-only">Old password</label>
+			<div class="has-error" tal:omit-tag="'current' not in errors">
+				<input type="password" name="current" class="form-control" id="inputOld" placeholder="Current password" required />
+				<span class="help-block" tal:omit-tag="'current' not in errors">${errors.get('current')}</span>
 			</div>
 		</div>
-	</div>
+		<div class="form-group">
+			<label for="inputNew" class="sr-only">New password</label>
+			<div class="has-error" tal:omit-tag="'new' not in errors">
+				<input type="password" name="new" class="form-control" id="inputNew" placeholder="New password" required />
+				<span class="help-block" tal:omit-tag="'new' not in errors">${errors.get('new')}</span>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="inputConfirm" class="sr-only">Confirm new password</label>
+			<div class="has-error" tal:omit-tag="'verify' not in errors">
+				<input type="password" name="verify" class="form-control" id="inputConfirm" placeholder="Confirm new password" required />
+				<span class="help-block" tal:omit-tag="'verify' not in errors">${errors.get('verify')}</span>
+			</div>
+		</div>
+		<button type="submit" class="btn btn-primary">Update password</button>
+	</form>
 </div>
 
 </html>

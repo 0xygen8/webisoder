@@ -16,28 +16,19 @@
 
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
-		<h1>Feed configuration</h1>
+		<h1>Access token</h1>
 	</div>
 
-	<div class="row">
-		<div class="col-sm-12">
-			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Access token</strong></div>
-				<div class="panel-body">
-					<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
-						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<div class="form-group">
-							<label for="inputToken">Your current token</label>
-							<input type="text" name="token" class="form-control" id="inputToken" value="${user.token}" readonly />
-							<span class="help-block">The access token is required to access your feed and your calendar.</span>
-						</div>
-						<p><strong>Warning: </strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</p>
-						<button type="submit" class="btn btn-danger">Reset token</button>
-					</form>
-				</div>
-			</div>
+	<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<div class="form-group">
+			<label for="inputToken">Your current token</label>
+			<input type="text" name="token" class="form-control" id="inputToken" value="${user.token}" readonly />
+			<span class="help-block">The access token is required to access your feed and your calendar.</span>
 		</div>
-	</div>
+		<p><strong>Warning: </strong>If you reset it all your previous feed, calendar and bookmark links become invalid.</p>
+		<button type="submit" class="btn btn-danger">Reset token</button>
+	</form>
 </div>
 
 </html>

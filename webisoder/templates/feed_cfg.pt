@@ -16,82 +16,73 @@
 
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
-		<h1>Feed configuration</h1>
+		<h1>Feed settings</h1>
 	</div>
 
-	<div class="row">
-		<div class="col-sm-12">
-			<div class="panel panel-default">
-				<div class="panel-heading"><strong>Feed settings</strong></div>
-				<div class="panel-body">
-					<form method="post" action="${request.route_url('settings_feed')}" tal:define="errors form_errors|{}">
-						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<div class="form-group">
-							<label for="inputDays">Maximum age</label>
-							<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
-								<select class="form-control" name="days_back" id="inputDays">
-									<option tal:repeat="value range(1,8)" tal:attributes="selected 'selected' if user.days_back == value else None">${value}</option>
-								</select>
-								<div class="input-group-addon">days</div>
-							</div>
-							<div tal:condition="errors.get('days_back')" class="has-error">
-								<span class="help-block">${errors.get('days_back')}</span>
-							</div>
-							<p class="help-block">
-								Episodes which have first been aired more than the number of days specified here in the past will be hidden.
-							</p>
-						</div>
-						<div class="form-group">
-							<label for="inputOffset">Date offset</label>
-							<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
-								<select class="form-control" name="date_offset" id="inputOffset">
-									<option tal:repeat="value range(0,3)" tal:attributes="selected 'selected' if user.date_offset == value else None">${value}</option>
-								</select>
-								<div class="input-group-addon">days</div>
-							</div>
-							<div tal:condition="errors.get('date_offset')" class="has-error">
-								<span class="help-block">${errors.get('date_offset')}</span>
-							</div>
-							<p class="help-block">
-								Entries in your feeds will be shifted by this number of days into the past.
-							</p>
-						</div>
-						<div class="form-group">
-							<label for="inputFormat">Link format</label>
-							<div tal:omit-tag="'link_format' not in errors" class="has-error">
-								<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
-								<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
-							</div>
-							<p class="help-block">
-								Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
-							</p>
-							<ul class="help-block">
-								<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
-								<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
-								<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
-								<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
-								<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
-							</ul>
-							<p>
-								The default value will do a simple Google search. <strong>If you wish to revert to the default setting, copy the following value to the field above</strong>:<br />
-								<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
-							</p>
-							<noscript>
-								<div class="alert alert-warning" role="alert">
-									It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
-								</div>
-							</noscript>
-							<div id="linkPreview">
-								This is a preview using your current setting:
-								<div id="linkPreviewVal" class="well"></div>
-							</div>
-						</div>
-						<button type="submit" class="btn btn-primary">Update settings</button>
-					</form>
+	<form method="post" action="${request.route_url('settings_feed')}" tal:define="errors form_errors|{}">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<div class="form-group">
+			<label for="inputDays">Maximum age</label>
+			<div tal:attributes="class 'input-group has-error' if errors.get('days_back') else 'input-group'">
+				<select class="form-control" name="days_back" id="inputDays">
+					<option tal:repeat="value range(1,8)" tal:attributes="selected 'selected' if user.days_back == value else None">${value}</option>
+				</select>
+				<div class="input-group-addon">days</div>
+			</div>
+			<div tal:condition="errors.get('days_back')" class="has-error">
+				<span class="help-block">${errors.get('days_back')}</span>
+			</div>
+			<p class="help-block">
+				Episodes which have first been aired more than the number of days specified here in the past will be hidden.
+			</p>
+		</div>
+		<div class="form-group">
+			<label for="inputOffset">Date offset</label>
+			<div tal:attributes="class 'input-group has-error' if errors.get('date_offset') else 'input-group'">
+				<select class="form-control" name="date_offset" id="inputOffset">
+					<option tal:repeat="value range(0,3)" tal:attributes="selected 'selected' if user.date_offset == value else None">${value}</option>
+				</select>
+				<div class="input-group-addon">days</div>
+			</div>
+			<div tal:condition="errors.get('date_offset')" class="has-error">
+				<span class="help-block">${errors.get('date_offset')}</span>
+			</div>
+			<p class="help-block">
+				Entries in your feeds will be shifted by this number of days into the past.
+			</p>
+		</div>
+		<div class="form-group">
+			<label for="inputFormat">Link format</label>
+			<div tal:omit-tag="'link_format' not in errors" class="has-error">
+				<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
+				<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
+			</div>
+			<p class="help-block">
+				Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
+			</p>
+			<ul class="help-block">
+				<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
+				<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
+				<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
+				<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
+				<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
+			</ul>
+			<p>
+				The default value will do a simple Google search. <strong>If you wish to revert to the default setting, copy the following value to the field above</strong>:<br />
+				<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
+			</p>
+			<noscript>
+				<div class="alert alert-warning" role="alert">
+					It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
 				</div>
+			</noscript>
+			<div id="linkPreview">
+				This is a preview using your current setting:
+				<div id="linkPreviewVal" class="well"></div>
 			</div>
 		</div>
-	</div>
+		<button type="submit" class="btn btn-primary">Update settings</button>
+	</form>
 </div>
 
 </html>

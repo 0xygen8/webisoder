@@ -2,53 +2,44 @@
 
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
-		<h1>User profile for ${user.name}</h1>
+		<h1>General settings</h1>
 	</div>
 
-	<div class="row">
-		<div class="col-sm-12">
-			<div class="panel panel-default">
-				<div class="panel-heading"><strong>General settings</strong></div>
-				<div class="panel-body">
-					<form method="post" action="${request.route_url('profile')}" tal:define="errors form_errors|{}">
-						<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
-						<div class="form-group">
-							<label for="inputEmail">Email address</label>
-							<div tal:omit-tag="'email' not in errors" class="has-error">
-								<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
-								<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="inputNews">Site news</label>
-							<div class="checkbox">
-								<label>
-									<input tal:attributes="checked 'checked' if user.site_news else None" name="site_news" id="inputNews" type="checkbox" /> Receive site news
-								</label>
-							</div>
-						</div>
-						<div class="form-group">
-							<label for="inputPassword">Your password</label>
-							<div tal:omit-tag="'password' not in errors" class="has-error">
-								<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
-								<span class="help-block" tal:condition="'password' in errors">${errors.get('password')}</span>
-							</div>
-							<p class="help-block">
-								You need to confirm your password to make changes to these settings.
-							</p>
-						</div>
-						<div tal:condition="user.signup" class="form-group">
-							<label for="inputEmail">Your account</label>
-							<p class="form-control-static">
-								You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
-							</p>
-						</div>
-						<button type="submit" class="btn btn-primary">Update settings</button>
-					</form>
-				</div>
+	<form method="post" action="${request.route_url('profile')}" tal:define="errors form_errors|{}">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<div class="form-group">
+			<label for="inputEmail">Email address</label>
+			<div tal:omit-tag="'email' not in errors" class="has-error">
+				<input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email" value="${user.mail}" required />
+				<span class="help-block" tal:condition="'email' in errors">${errors.get('email')}</span>
 			</div>
 		</div>
-	</div>
+		<div class="form-group">
+			<label for="inputNews">Site news</label>
+			<div class="checkbox">
+				<label>
+					<input tal:attributes="checked 'checked' if user.site_news else None" name="site_news" id="inputNews" type="checkbox" /> Receive site news
+				</label>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="inputPassword">Your password</label>
+			<div tal:omit-tag="'password' not in errors" class="has-error">
+				<input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password" value="" />
+				<span class="help-block" tal:condition="'password' in errors">${errors.get('password')}</span>
+			</div>
+			<p class="help-block">
+				You need to confirm your password to make changes to these settings.
+			</p>
+		</div>
+		<div tal:condition="user.signup" class="form-group">
+			<label for="inputEmail">Your account</label>
+			<p class="form-control-static">
+				You joined webisoder on ${user.signup.strftime('%B %d %Y')}.
+			</p>
+		</div>
+		<button type="submit" class="btn btn-primary">Update settings</button>
+	</form>
 </div>
 
 </html>
