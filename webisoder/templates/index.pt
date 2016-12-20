@@ -9,7 +9,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="${request.route_url('home')}"><img alt="webisoder" src="${request.static_url('webisoder:static/img/webisoder-dark.png')}" /></a>
+			<a class="navbar-brand" href="${request.route_url('home')}"><img alt="webisoder" src="${request.static_url('webisoder:static/img/webisoder.png')}" /></a>
 			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
 		</div>
 		<div id="navbar" class="navbar-collapse collapse">
