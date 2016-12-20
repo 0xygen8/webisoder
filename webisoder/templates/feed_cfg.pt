@@ -38,6 +38,7 @@
 				</p>
 			</div>
 		</div>
+
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="inputOffset">Date offset</label>
 			<div class="col-sm-10">
@@ -55,6 +56,7 @@
 				</p>
 			</div>
 		</div>
+
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="inputFormat">Link format</label>
 			<div class="col-sm-10">
@@ -62,31 +64,50 @@
 					<input type="text" class="form-control" name="link_format" id="inputFormat" value="${user.link_format}"/>
 					<span class="help-block" tal:condition="'link_format' in errors">${errors.get('link_format')}</span>
 				</div>
-				<p class="help-block">
-					Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
-				</p>
-			<ul class="help-block">
-				<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
-				<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
-				<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
-				<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
-				<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
-			</ul>
-			<p>
-				The default value will do a simple Google search. <strong>If you wish to revert to the default setting, copy the following value to the field above</strong>:<br />
-				<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
-			</p>
-			<noscript>
-				<div class="alert alert-warning" role="alert">
-					It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
-				</div>
-			</noscript>
-			<div id="linkPreview">
-				This is a preview using your current setting:
-			</div>
-				<div id="linkPreviewVal" class="well"></div>
 			</div>
 		</div>
+
+		<div class="row">
+			<label class="col-sm-2 control-label" for="inputFormat">Preview</label>
+			<div class="col-sm-10">
+				<div id="linkPreview">
+					<div id="linkPreviewVal" class="well well-sm"></div>
+				</div>
+				<noscript>
+					<div class="alert alert-warning" role="alert">
+						It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
+					</div>
+				</noscript>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-sm-offset-2 col-sm-10">
+				<div class="panel panel-default">
+				  <div class="panel-heading">Instructions</div>
+				  <div class="panel-body">
+						<p>
+							Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
+						</p>
+						<ul>
+							<li><code>##SHOW##</code> &ndash; the name of the show, eg. <mark>Frasier</mark></li>
+							<li><code>##SEASON##</code> &ndash; season number, eg. <mark>1</mark></li>
+							<li><code>##SEASON2##</code> &ndash; two-digit season number, eg. <mark>01</mark></li>
+							<li><code>##EPISODE##</code> &ndash; two-digit episode number, eg. <mark>06</mark></li>
+							<li><code>##TITLE##</code> &ndash; the episode's title, eg. <mark>The Crucible</mark></li>
+						</ul>
+						<p>
+							The default value will do a simple Google search.
+						</p>
+						<p>
+							If you wish to <strong>revert to the default</strong> setting, copy the following value to the field above:<br />
+							<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
+						</p>
+				  </div>
+				</div>
+			</div>
+		</div>
+
 		<div class="form-group">
 			<div class="col-sm-offset-2 col-sm-10">
 				<button type="submit" class="btn btn-primary">Update settings</button>
