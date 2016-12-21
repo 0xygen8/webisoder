@@ -74,3 +74,14 @@ body.index div.jumbotron
 	position: relative;
 	top: -3px;
 }
+
+@media (max-width: 1000px) {
+	.navbar-default .navbar-brand > span
+	{
+		display: none;
+	}
+
+	.navbar-default .navbar-form .form-group {
+		width: 15em;
+	}
+}

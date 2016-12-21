@@ -9,7 +9,7 @@
 				<span class="icon-bar"></span>
 			</button>
 			<a class="navbar-brand" href="${request.route_url('home')}"><img alt="webisoder" src="${request.static_url('webisoder:static/img/webisoder.png')}" /></a>
-			<a class="navbar-brand" href="${request.route_url('home')}">webisoder</a>
+			<a class="navbar-brand" href="${request.route_url('home')}"><span>webisoder</span></a>
 		</div>
 		<div tal:condition="request.authenticated_userid" class="navbar-collapse collapse">
 			<ul metal:define-slot="navitems" class="nav navbar-nav">
