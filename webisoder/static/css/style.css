@@ -1,7 +1,7 @@
 body
 {
 	padding-top: 50px;
-	padding-bottom: 20px;
+	padding-bottom: 50px;
 }
 
 th
@@ -58,18 +58,15 @@ body.index
 
 body.index div.jumbotron
 {
-	opacity: .9;
+	background-color: rgba(238, 238, 238, 0.85);
+	margin-bottom: 0;
 }
 
-body.index div.container .row > div
+.splash
 {
+	width: 100%;
 	background-color: #eee;
-	opacity: .9;
-}
-
-body.index .navbar
-{
-	opacity: .9;
+	padding: 1% 0 2% 0;
 }
 
 .navbar-brand img
