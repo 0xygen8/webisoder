@@ -18,8 +18,8 @@ from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
 from datetime import date
 
-from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint
-from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Text, Numeric
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, Numeric
+from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import relationship
@@ -35,7 +35,7 @@ Base = declarative_base()
 subscriptions = Table('subscriptions', Base.metadata,
 	Column('show_id', Integer, ForeignKey('shows.show_id'),
 		nullable=False),
-	Column('user_name', Text(30), ForeignKey('users.user_name'),
+	Column("user_name", String(30), ForeignKey("users.user_name"),
 		nullable=False),
 	UniqueConstraint("show_id", "user_name")
 )
@@ -116,20 +116,20 @@ class Show(Base):
 class User(Base):
 
 	__tablename__ = 'users'
-	name = Column('user_name', Text(30), primary_key=True)
-	passwd = Column(Text(64))
-	mail = Column(Text(50), unique=True)
+	name = Column("user_name", String(30), primary_key=True)
+	passwd = Column(String(64))
+	mail = Column(String(50), unique=True)
 	signup = Column(DateTime)
 	verified = Column(Boolean)
-	token = Column(Text(12))
+	token = Column(String(12))
 	days_back = Column(Numeric)
-	link_provider = Column(Text(20))
+	link_provider = Column(String(20))
 	link_format = Column(Text)
 	site_news = Column(Boolean)
 	lastest_news_read = Column(DateTime)
 	date_offset = Column(Integer)
 	last_login = Column(DateTime)
-	recover_key = Column(Text(30))
+	recover_key = Column(String(30))
 
 	shows = relationship(Show, secondary=subscriptions, backref="users")
 
