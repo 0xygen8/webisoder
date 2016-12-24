@@ -126,7 +126,7 @@ class User(Base):
 	link_provider = Column(String(20))
 	link_format = Column(Text)
 	site_news = Column(Boolean)
-	lastest_news_read = Column(DateTime)
+	latest_news_read = Column(DateTime)
 	date_offset = Column(Integer)
 	last_login = Column(DateTime)
 	recover_key = Column(String(30))
