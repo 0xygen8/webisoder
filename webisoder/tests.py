@@ -189,18 +189,18 @@ class WebisoderTest(unittest.TestCase):
 		self.config.add_route("reset_password", "__REC__/{key}")
 
 
-class WebisoderModelTests(unittest.TestCase):
+class WebisoderNewModelTests(unittest.TestCase):
 
 	def setUp(self):
 
-		super(WebisoderModelTests, self).setUp()
+		super(WebisoderNewModelTests, self).setUp()
 		self.config = testing.setUp()
 		Database.connect()
 
 		with transaction.manager:
 
-			show1 = Show(id=1, name='show1', url='http://1')
-			show2 = Show(id=2, name='show2', url='http://2')
+			show1 = Show(id=1, name="show1", url="http://1")
+			show2 = Show(id=2, name="show2", url="http://2")
 
 			DBSession.add(show1)
 			DBSession.add(show2)
@@ -209,11 +209,129 @@ class WebisoderModelTests(unittest.TestCase):
 			DBSession.add(Episode(show=show1, num=2, season=1))
 			DBSession.add(Episode(show=show2, num=1, season=1))
 
-			DBSession.add(User(name='user1'))
-			DBSession.add(User(name='user2'))
-			DBSession.add(User(name='user3'))
+			user1 = User(name="user1")
+			user2 = User(name="user2")
+			user3 = User(name="user3")
+
+			user1.password = "letmein"
+			user2.password = "letmein"
+			user3.password = "letmein"
+
+			user1.mail = "user1@212"
+			user2.mail = "user2@213"
+			user3.mail = "user3@214"
+
+			DBSession.add(user1)
+			DBSession.add(user2)
+			DBSession.add(user3)
 
 	def tearDown(self):
+
+		with transaction.manager:
+
+			DBSession.query(Episode).delete()
+			DBSession.query(Show).delete()
+			DBSession.query(User).delete()
+
+		DBSession.remove()
+		testing.tearDown()
+
+	def testUpgradePassword(self):
+
+		user = DBSession.query(User).get('user1')
+		user.passwd = '0d107d09f5bbe40cade3de5c71e9e9b7'
+		user.salt = ''
+
+		self.assertEqual('0d107d09f5bbe40cade3de5c71e9e9b7',
+								user.passwd)
+		self.assertEqual('', user.salt)
+
+		self.assertTrue(user.authenticate('letmein'))
+		self.assertNotEqual('0d107d09f5bbe40cade3de5c71e9e9b7',
+								user.passwd)
+
+		self.assertTrue(user.authenticate('letmein'))
+
+	def testLoginRemovesResetToken(self):
+
+		user = DBSession.query(User).get("user1")
+		user.password = "first"
+		user.recover_key = "testkey287"
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey287", user.recover_key)
+		user.authenticate("wrong")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey287", user.recover_key)
+		user.authenticate("first")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual(None, user.recover_key)
+
+		user = DBSession.query(User).get("user1")
+		user.passwd = "0d107d09f5bbe40cade3de5c71e9e9b7"
+		user.recover_key = "testkey302"
+		user.authenticate("wrong")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual("testkey302", user.recover_key)
+		user.authenticate("letmein")
+
+		user = DBSession.query(User).get("user1")
+		self.assertEqual(None, user.recover_key)
+
+	def testPasswordUpdateRemovesResetToken(self):
+
+		user = DBSession.query(User).get("user1")
+		user.recover_key = "testkey315"
+
+		self.assertEqual("testkey315", user.recover_key)
+		user.password = "something"
+		self.assertEqual(None, user.recover_key)
+
+
+class WebisoderModelTests(unittest.TestCase):
+
+	def setUp(self):
+
+		super(WebisoderModelTests, self).setUp()
+		self.config = testing.setUp()
+		Database.connect()
+
+		MockUser.mockAuthentication()
+
+		with transaction.manager:
+
+			show1 = Show(id=1, name="show1", url="http://1")
+			show2 = Show(id=2, name="show2", url="http://2")
+
+			DBSession.add(show1)
+			DBSession.add(show2)
+
+			DBSession.add(Episode(show=show1, num=1, season=1))
+			DBSession.add(Episode(show=show1, num=2, season=1))
+			DBSession.add(Episode(show=show2, num=1, season=1))
+
+			user1 = User(name="user1")
+			user2 = User(name="user2")
+			user3 = User(name="user3")
+
+			user1.password = "letmein"
+			user2.password = "letmein"
+			user3.password = "letmein"
+
+			user1.mail = "user1@212"
+			user2.mail = "user2@213"
+			user3.mail = "user3@214"
+
+			DBSession.add(user1)
+			DBSession.add(user2)
+			DBSession.add(user3)
+
+	def tearDown(self):
+
+		MockUser.resetAuthentication()
 
 		with transaction.manager:
 
@@ -358,60 +476,6 @@ class WebisoderModelTests(unittest.TestCase):
 
 		self.assertNotEqual(None, user.recover_key)
 		self.assertEqual(30, len(user.recover_key))
-
-	def testUpgradePassword(self):
-
-		user = DBSession.query(User).get('user1')
-		user.passwd = '0d107d09f5bbe40cade3de5c71e9e9b7'
-		user.salt = ''
-
-		self.assertEqual('0d107d09f5bbe40cade3de5c71e9e9b7',
-								user.passwd)
-		self.assertEqual('', user.salt)
-
-		self.assertTrue(user.authenticate('letmein'))
-		self.assertNotEqual('0d107d09f5bbe40cade3de5c71e9e9b7',
-								user.passwd)
-
-		self.assertTrue(user.authenticate('letmein'))
-
-	def testLoginRemovesResetToken(self):
-
-		user = DBSession.query(User).get("user1")
-		user.password = "first"
-		user.recover_key = "testkey287"
-
-		user = DBSession.query(User).get("user1")
-		self.assertEqual("testkey287", user.recover_key)
-		user.authenticate("wrong")
-
-		user = DBSession.query(User).get("user1")
-		self.assertEqual("testkey287", user.recover_key)
-		user.authenticate("first")
-
-		user = DBSession.query(User).get("user1")
-		self.assertEqual(None, user.recover_key)
-
-		user = DBSession.query(User).get("user1")
-		user.passwd = "0d107d09f5bbe40cade3de5c71e9e9b7"
-		user.recover_key = "testkey302"
-		user.authenticate("wrong")
-
-		user = DBSession.query(User).get("user1")
-		self.assertEqual("testkey302", user.recover_key)
-		user.authenticate("letmein")
-
-		user = DBSession.query(User).get("user1")
-		self.assertEqual(None, user.recover_key)
-
-	def testPasswordUpdateRemovesResetToken(self):
-
-		user = DBSession.query(User).get("user1")
-		user.recover_key = "testkey315"
-
-		self.assertEqual("testkey315", user.recover_key)
-		user.password = "something"
-		self.assertEqual(None, user.recover_key)
 
 	def testRenderEpisode(self):
 
@@ -1188,6 +1252,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 			user = User(name="testuser100")
 			user.password = "secret"
+			user.mail = "init@1203"
 			DBSession.add(user)
 
 	def tearDown(self):
@@ -1399,6 +1464,7 @@ class TestShowsView(WebisoderTest):
 			self.user.password = "secret"
 			self.user.token = 'mytoken'
 			self.user.days_back = 0
+			self.user.mail = "init@1414"
 			DBSession.add(self.user)
 
 			self.show1 = Show(id=1, name='show1', url='http://1')
@@ -1774,6 +1840,8 @@ class TestShowsView(WebisoderTest):
 		DBSession.add(ep5)
 
 		user = User(name='testuser2')
+		user.mail = "1791@example.org"
+		user.password = "letmein"
 		DBSession.add(user)
 
 		user.shows.append(show1)
@@ -1860,6 +1928,7 @@ class TestProfileView(WebisoderTest):
 
 			user = User(name="testuser11")
 			user.password = "secret"
+			user.mail = "init2@set.up"
 			DBSession.add(user)
 
 			user = User(name="testuser12")

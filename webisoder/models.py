@@ -16,7 +16,7 @@
 
 from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
-from datetime import date
+from datetime import datetime, date
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, Numeric
 from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint, Text
@@ -117,15 +117,14 @@ class User(Base):
 
 	__tablename__ = 'users'
 	name = Column("user_name", String(30), primary_key=True)
-	passwd = Column(String(64))
-	mail = Column(String(50), unique=True)
-	signup = Column(DateTime)
-	verified = Column(Boolean)
+	passwd = Column(String(64), nullable=False)
+	mail = Column(String(50), unique=True, nullable=False)
+	signup = Column(DateTime, nullable=False, default=datetime.now)
+	verified = Column(Boolean, nullable=False, default=False)
 	token = Column(String(12))
-	days_back = Column(Numeric)
-	link_provider = Column(String(20))
+	days_back = Column(Numeric, nullable=False, default=7)
 	link_format = Column(Text)
-	site_news = Column(Boolean)
+	site_news = Column(Boolean, nullable=False, default=True)
 	latest_news_read = Column(DateTime)
 	date_offset = Column(Integer)
 	last_login = Column(DateTime)
