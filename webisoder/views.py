@@ -63,7 +63,7 @@ class TVDBWrapper(object):
 	def getBanner(self, url):
 
 		best = None
-		best_rating = 0
+		best_rating = -1
 
 		if not url.isdigit():
 			raise tvdb_shownotfound()
@@ -72,7 +72,7 @@ class TVDBWrapper(object):
 		show = tv[int(url)]
 
 		banners = show["_banners"]
-		fanart = banners.get("fanart")
+		fanart = banners.get("fanart", {})
 
 		for res in fanart:
 			items = fanart.get(res)
