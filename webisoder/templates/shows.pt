@@ -25,8 +25,8 @@
 	</div>
 	<div tal:omit-tag="" tal:repeat="show sorted(subscribed)">
 	<div class="media">
-		<div class="media-left">
-			<img class="media-object" src="${request.route_url('banners', show_id=show.url)}" alt="${show.name}" />
+		<div class="media-left" tal:define="fallback request.static_url('webisoder:static/img/nobanner.png')">
+			<img class="media-object" src="${request.route_url('banners', show_id=show.url)}" alt="${show.name}" onerror="this.src='${fallback}'" />
 		</div>
 		<div class="media-body" tal:define="next show.next_episode">
 			<div class="pull-right">

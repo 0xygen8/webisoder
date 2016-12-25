@@ -32,14 +32,16 @@ a.dropdown-toggle:focus + .dropdown-menu
 	display: block;
 }
 
-div#shows img.media-object
+div#shows img.media-object,
+div#search-result img.media-object
 {
 	height: 100px;
 	width: 179px;
 	margin-right: .5em;
 }
 
-div#shows h4 a
+div#shows h4 a,
+div#search-result h4 a
 {
 	color: rgb(51, 51, 51);
 }
