@@ -29,7 +29,7 @@ from pyramid.response import Response
 from pyramid.security import remember, forget
 from pyramid.view import view_config, view_defaults
 
-from tvdb_api import BaseUI, Tvdb, tvdb_shownotfound, tvdb_error
+from tvdb_api import Tvdb, tvdb_shownotfound, tvdb_error
 
 from .models import DBSession, User, Show
 from .errors import LoginFailure, MailError, SubscriptionFailure, DuplicateEmail
@@ -89,17 +89,8 @@ class TVDBWrapper(object):
 
 	def search(self, text):
 
-		result = []
-
-		class TVDBSearch(BaseUI):
-			def selectSeries(self, allSeries):
-				result.extend(allSeries)
-				return BaseUI.selectSeries(self, allSeries)
-
-		tv = Tvdb(custom_ui=TVDBSearch)
-		tv[text]
-
-		return result
+		tv = Tvdb()
+		return tv.search(text)
 
 @decorator
 def securetoken(func, *args, **kwargs):
