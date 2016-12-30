@@ -40,6 +40,43 @@ div#search-result img.media-object
 	margin-right: .5em;
 }
 
+div#episodes img
+{
+	width: 75px;
+	margin-right: 10px;
+}
+
+div#episodes > div#all
+{
+	padding-left: 43px;
+	background-image: url(../img/timeline.png);
+	background-repeat: repeat-y;
+}
+
+div#episodes > div#all h3
+{
+	background-image: url(../img/timeline-dot.png);
+	background-repeat: no-repeat;
+	background-position: left center;
+	font-size: medium;
+	font-weight: normal;
+	padding-left: 31px;
+	position: relative;
+	left: -31px;
+}
+
+div#episodes > div#all h3 span
+{
+	position: relative;
+	top: -2px;
+}
+
+div#episodes > div#all .media
+{
+	border: 1px #e8e8e8 solid;
+	padding: 10px;
+}
+
 div#shows h4 a,
 div#search-result h4 a
 {

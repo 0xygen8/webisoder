@@ -12,35 +12,28 @@
 	</li>
 </ul>
 
-<div metal:fill-slot="main" class="container">
+<div metal:fill-slot="main" class="container" id="episodes">
 	<div class="page-header">
 		<h1>Your Episodes</h1>
 	</div>
 
 	<p>Your list of episodes is also available as a <a href="${request.route_url('feed', user=user.name, token=user.token)}">web feed</a> and as an <a href="${request.route_url('ical', user=user.name, token=user.token)}">iCalendar</a>.</p>
 
-	<h3>Recent</h3>
-	<ul class="list-group" tal:define="global prevdate 0">
+	<div id="all" tal:define="global prevdate 0">
 		<div tal:repeat="episode episodes" tal:omit-tag="">
-			<div tal:condition="episode.airdate <= date.today()" tal:omit-tag="">
-				<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
-				<li class="list-group-item"><a href="${episode.render(user.link_format)}">${episode}</a></li>
-				<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
+			<h3 class="text-muted" tal:condition="prevdate != episode.airdate"><time>${episode.airdate.strftime('%A, %B %d, %Y')} <span tal:condition="episode.airdate == date.today()" class="label label-success">Today</span></time></h3>
+			<div class="media">
+				<div class="media-left">
+					<img class="media-object" src="${request.route_url('banners', show_id=episode.show.url)}" alt="${episode.show.name}" />
+				</div>
+				<div class="media-body">
+					<h4 class="media-heading">${episode.show.name}</h4>
+					<a href="${episode.render(user.link_format)}">Season ${episode.season}, episode ${episode.num} &ndash; ${episode.title}<span class="text-muted" tal:condition="not:episode.title">Title unknown</span></a>
+				</div>
 			</div>
+			<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
 		</div>
-	</ul>
-
-	<h3>Upcoming</h3>
-	<ul class="list-group" tal:define="global prevdate 0">
-		<div tal:repeat="episode episodes" tal:omit-tag="">
-			<div tal:condition="episode.airdate > date.today()" tal:omit-tag="">
-				<li class="list-group-item disabled" tal:condition="prevdate != episode.airdate">${episode.airdate.strftime('%B %d')}</li>
-				<li class="list-group-item"><a href="${episode.render(user.link_format)}">${episode}</a></li>
-				<span tal:define="global prevdate episode.airdate" tal:omit-tag="" />
-			</div>
-		</div>
-	</ul>
-
+	</div>
 </div>
 
 </html>
