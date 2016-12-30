@@ -1,5 +1,7 @@
 <html metal:use-macro="load: base_auth.pt" tal:define="date import: datetime.date">
 
+<script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/feeds.js')}"></script>
+
 <ul metal:fill-slot="navitems" class="nav navbar-nav">
 	<li><a href="${request.route_url('shows')}">Shows</a></li>
 	<li><a href="${request.route_url('episodes')}">Episodes</a></li>
