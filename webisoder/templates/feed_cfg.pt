@@ -84,8 +84,8 @@
 		<div class="row">
 			<div class="col-sm-offset-2 col-sm-10">
 				<div class="panel panel-default">
-				  <div class="panel-heading">Instructions</div>
-				  <div class="panel-body">
+					<div class="panel-heading">Instructions</div>
+					<div class="panel-body">
 						<p>
 							Your feed and calendar entries will point to an address that you can customize here. You can use the following fields as parameters in your address:
 						</p>
@@ -103,7 +103,7 @@
 							If you wish to <strong>revert to the default</strong> setting, copy the following value to the field above:<br />
 							<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
 						</p>
-				  </div>
+					</div>
 				</div>
 			</div>
 		</div>
