@@ -1,11 +1,5 @@
 <html metal:use-macro="load: base_auth.pt" tal:define="date import: datetime.date">
 
-<ul metal:fill-slot="navitems" class="nav navbar-nav">
-	<li><a href="${request.route_url('shows')}">Shows</a></li>
-	<li class="active"><a href="${request.route_url('episodes')}">Episodes</a></li>
-	<li><a href="${request.route_url('feeds')}">Feeds</a></li>
-</ul>
-
 <div metal:fill-slot="main" class="container" id="episodes">
 	<div class="page-header">
 		<h1>Your Episodes</h1>
