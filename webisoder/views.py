@@ -644,7 +644,7 @@ class FeedSettingsController(WebisoderController):
 		return self.redirect("settings_feed")
 
 
-@view_defaults(route_name="settings_token", renderer="templates/token.pt")
+@view_defaults(route_name="settings_token", renderer="templates/feeds.pt")
 class TokenResetController(WebisoderController):
 
 	@view_config(permission="view", request_method="GET")

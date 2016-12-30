@@ -2,18 +2,6 @@
 
 <script metal:fill-slot="js" type="text/javascript" src="${request.static_url('webisoder:static/js/profile-feed-settings.js')}"></script>
 
-<ul metal:fill-slot="navitems" class="nav navbar-nav">
-	<li><a href="${request.route_url('shows')}">Shows</a></li>
-	<li><a href="${request.route_url('episodes')}">Episodes</a></li>
-	<li class="dropdown active">
-		<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Feeds <span class="caret"></span></a>
-		<ul class="dropdown-menu">
-			<li><a href="${request.route_url('settings_feed')}">Feed settings</a></li>
-			<li><a href="${request.route_url('settings_token')}">Access token</a></li>
-		</ul>
-	</li>
-</ul>
-
 <div metal:fill-slot="main" class="container">
 	<div class="page-header">
 		<h1>Feed settings</h1>
