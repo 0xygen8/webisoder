@@ -49,6 +49,28 @@ meta = Table("meta", Base.metadata,
 # news = Table("news", ...
 
 
+class ResultRating(float):
+
+	def __new__(self, search_o, val_o):
+
+		search = search_o.lower()
+		val = val_o.lower()
+		res = 0
+
+		if search == val:
+			res = 1
+		elif val.endswith(search):
+			res = .9
+		elif val.startswith(search):
+			res = .9
+		elif search in val.split(" "):
+			res = .5
+		elif search in val:
+			res = .4
+
+		return super(ResultRating, self).__new__(self, res)
+
+
 class Episode(Base):
 
 	__tablename__ = "episodes"

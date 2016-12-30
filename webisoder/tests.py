@@ -30,7 +30,8 @@ from tvdb_api import tvdb_shownotfound
 
 from deform.exception import ValidationFailure
 
-from .models import DBSession, Base, Show, Episode, User, subscriptions
+from .models import DBSession, Base, ResultRating, Episode, User, subscriptions
+from .models import Show
 
 from .views import IndexController, RegistrationController, TokenResetController
 from .views import ShowsController, EpisodesController, PasswordChangeController
@@ -1700,6 +1701,7 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual(res.get("search"), "big bang theory")
 		show = res.get("shows")[0]
 		self.assertEqual(show.get("id"), 80379)
+		self.assertEqual(show.get("rating"), 1)
 		self.assertNotIn("form_errors", res)
 		self.assertEqual(res.get("search"), "big bang theory")
 
@@ -1767,6 +1769,16 @@ class TestShowsView(WebisoderTest):
 		self.assertEqual(1, len(msg))
 		self.assertEqual("Failed to reach TheTVDB, search results will "
 						"be incomplete.", msg[0])
+
+	def testSearchRating(self):
+
+		self.assertEqual(1, ResultRating("seinfeld", "seinfeld"))
+		self.assertEqual(1, ResultRating("seinfeld", "Seinfeld"))
+		self.assertEqual(.9, ResultRating("seinfeld", "The Seinfeld"))
+		self.assertEqual(.9, ResultRating("seinfeld", "Seinfeld 2000"))
+		self.assertEqual(.5, ResultRating("seinfeld", "X Seinfeld X"))
+		self.assertEqual(.4, ResultRating("seinfeld", "X Seinfelds X"))
+		self.assertEqual(0, ResultRating("seinfeld", "The Simpsons"))
 
 	def testEpisodes(self):
 

@@ -31,7 +31,7 @@ from pyramid.view import view_config, view_defaults
 
 from tvdb_api import Tvdb, tvdb_shownotfound, tvdb_error
 
-from .models import DBSession, User, Show
+from .models import DBSession, User, Show, ResultRating
 from .errors import LoginFailure, MailError, SubscriptionFailure, DuplicateEmail
 from .errors import FormError, DuplicateUserName
 from .forms import LoginForm, PasswordResetForm, FeedSettingsForm, SubscribeForm
@@ -506,6 +506,9 @@ class SearchController(WebisoderController):
 
 		engine = self.backend()
 		result = engine.search(search)
+
+		for row in result:
+			row["rating"] = ResultRating(search, row["seriesname"])
 
 		return { "shows": result, "search": search }
 

@@ -19,7 +19,7 @@
 
 	<div tal:define="shows shows|None">
 		<div tal:condition="not:shows">Nothing found, sorry.</div>
-		<div tal:omit-tag="" tal:repeat="show sorted(shows)">
+		<div tal:omit-tag="" tal:repeat="show sorted(shows, key=lambda show: show.rating, reverse=True)">
 			<div class="media">
 				<div class="media-left" tal:define="fallback request.static_url('webisoder:static/img/nobanner.png')">
 					<img class="media-object" src="${request.route_url('banners', show_id=show.seriesid)}" alt="${show.seriesname}" onerror="this.src='${fallback}'" />
