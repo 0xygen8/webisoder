@@ -37,7 +37,7 @@ from .views import IndexController, RegistrationController, TokenResetController
 from .views import ShowsController, EpisodesController, PasswordChangeController
 from .views import ProfileController, AuthController, PasswordRecoveryController
 from .views import FeedSettingsController, PasswordResetController
-from .views import SearchController, BannerController
+from .views import SearchController, BannerController, FeedsController
 
 from .errors import LoginFailure, DuplicateEmail, MailError, SubscriptionFailure
 from .errors import DuplicateUserName, FormError
@@ -182,6 +182,7 @@ class WebisoderTest(unittest.TestCase):
 
 		self.config.add_route("profile", "__PROFILE__")
 		self.config.add_route("settings_token", "__TOKEN__")
+		self.config.add_route("feeds", "__FEEDS__")
 		self.config.add_route("settings_pw", "__PW__")
 		self.config.add_route("settings_feed", "__FEED__")
 		self.config.add_route("shows", "__SHOWS__")
@@ -2670,7 +2671,7 @@ class TestProfileView(WebisoderTest):
 		ctl = TokenResetController(request)
 		res = ctl.post()
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__TOKEN__'))
+		self.assertTrue(res.location.endswith('__FEEDS__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 		token = user.token
@@ -2678,7 +2679,7 @@ class TestProfileView(WebisoderTest):
 		ctl = TokenResetController(request)
 		res = ctl.post()
 		self.assertTrue(hasattr(res, 'location'))
-		self.assertTrue(res.location.endswith('__TOKEN__'))
+		self.assertTrue(res.location.endswith('__FEEDS__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 
@@ -2710,6 +2711,41 @@ class TestIndexPage(WebisoderTest):
 		res = ctl.get()
 		self.assertTrue(hasattr(res, "location"))
 		self.assertTrue(res.location.endswith("__SHOWS__"))
+
+
+class TestFeedsPage(WebisoderTest):
+
+	def setUp(self):
+
+		super(TestFeedsPage, self).setUp()
+
+		with transaction.manager:
+
+			user = User(name="testuser2724")
+			user.password = "secret"
+			user.mail = "init@1203"
+			DBSession.add(user)
+
+	def tearDown(self):
+
+		with transaction.manager:
+
+			user = DBSession.query(User).get("testuser2724")
+			DBSession.delete(user)
+
+		testing.tearDown()
+
+	def testUserInResponse(self):
+
+		request = testing.DummyRequest()
+		request.session["auth.userid"] = "testuser2724"
+
+		ctl = FeedsController(request)
+		res = ctl.get()
+		self.assertTrue(hasattr(res, "user"))
+
+		user = res.get("user")
+		self.assertEquals("testuser2724", user.name)
 
 
 class TestMailClasses(WebisoderTest):

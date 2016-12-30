@@ -1,0 +1,42 @@
+<html metal:use-macro="load: base_auth.pt" tal:define="date import: datetime.date">
+
+<ul metal:fill-slot="navitems" class="nav navbar-nav">
+	<li><a href="${request.route_url('shows')}">Shows</a></li>
+	<li><a href="${request.route_url('episodes')}">Episodes</a></li>
+	<li class="active"><a href="${request.route_url('feeds')}">Feeds</a></li>
+</ul>
+
+<div metal:fill-slot="main" class="container" id="episodes">
+	<div class="page-header">
+		<h1>Feeds</h1>
+	</div>
+
+	<p>Your list of episodes is available in several machine-readable formats, so-called feeds. These feeds can be used with a large variety of applications.</p>
+
+	<h2>Web feed</h2>
+
+	<p>If you would like to see your list of episodes in a feed reader or web browser you can use webisoder's feed for that. Wikipedia has more information about <a href="https://en.wikipedia.org/wiki/Web_feed">web feeds</a> in case you are wondering.</p>
+	<p>The private URL for your personal webisoder feed is:</p>
+	<div class="well"><a href="${request.route_url('feed', user=user.name, token=user.token)}">${request.route_url('feed', user=user.name, token=user.token)}</a></div>
+	<p>Webisoder's feed should be compatible with any application that understands the <a href="https://en.wikipedia.org/wiki/Atom_(standard)">Atom Syndication Format</a>. Wikipedia has a large <a href="https://en.wikipedia.org/wiki/Comparison_of_feed_aggregators">list of feed aggregators</a>, you should be able to find one that suits your needs there.</p>
+
+	<h2>iCalendar</h2>
+
+	<p>Most calendar applications and some e-mail readers can import <a href="https://en.wikipedia.org/wiki/ICalendar">iCalendar</a> feeds and present your webisoder episodes as calendar events. Again, Wikipedia has a <a href="https://en.wikipedia.org/wiki/List_of_applications_with_iCalendar_support">list of applications with iCalendar support</a>.</p>
+
+	<p>The private URL for your personal webisoder iCalendar is:</p>
+
+	<div class="well"><a href="${request.route_url('ical', user=user.name, token=user.token)}">${request.route_url('ical', user=user.name, token=user.token)}</a></div>
+
+	<h2>Reset URLs</h2>
+
+	<p>If you have shared your feed URLs with somebody that you no longer wish to have access to your data, you can reset the private URLs.</p>
+
+	<p><strong>Warning: </strong>If you reset the URLs all your previous feed, calendar and bookmark links become invalid.</p>
+	<form method="post" action="${request.route_url('settings_token')}" id="resetTokenForm">
+		<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
+		<button type="submit" class="btn btn-danger">Reset private URLs</button>
+	</form>
+</div>
+
+</html>

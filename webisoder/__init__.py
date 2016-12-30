@@ -66,6 +66,7 @@ def main(global_config, **settings):
 	config.add_route('settings_token', '/settings/token')
 	config.add_route('episodes', '/episodes')
 	config.add_route('feed', '/atom/{user}/{token}')
+	config.add_route("feeds", "/feeds")
 	config.add_route('ical', '/ical/{user}/{token}')
 	config.add_route('html', '/episodes/{user}/{token}')
 	config.add_route('subscribe', '/subscribe')

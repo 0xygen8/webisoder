@@ -150,6 +150,17 @@ class ContactsController(WebisoderController):
 		return {}
 
 
+@view_defaults(renderer="templates/feeds.pt", permission="view")
+class FeedsController(WebisoderController):
+
+	@view_config(route_name="feeds", request_method="GET")
+	def get(self):
+
+		uid = self.request.authenticated_userid
+		user = DBSession.query(User).get(uid)
+		return { "user": user }
+
+
 @view_defaults(renderer="templates/shows.pt")
 class ShowsController(WebisoderController):
 
@@ -651,8 +662,8 @@ class TokenResetController(WebisoderController):
 		user = DBSession.query(User).get(uid)
 		user.reset_token()
 
-		self.flash("info", "Your token has been reset")
-		return self.redirect("settings_token")
+		self.flash("info", "Your feed URLs have been reset")
+		return self.redirect("feeds")
 
 
 @view_defaults(route_name="settings_pw", renderer="templates/settings_pw.pt")
