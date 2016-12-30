@@ -1,6 +1,6 @@
 <!doctype html>
 
-<html lang="en">
+<html lang="en" class="no-js">
 	<head>
 		<title>webisoder</title>
 		<meta charset="utf-8" />
@@ -9,6 +9,7 @@
 		<link rel="stylesheet" type="text/css" href="${request.static_url('webisoder:static/css/style.css')}" />
 		<script type="text/javascript" src="${request.static_url('webisoder:static/js/jquery-3.1.1.min.js')}"></script>
 		<script type="text/javascript" src="${request.static_url('webisoder:static/js/bootstrap.min.js')}"></script>
+		<script type="text/javascript" src="${request.static_url('webisoder:static/js/webisoder.js')}"></script>
 		<link rel="shortcut icon" href="${request.static_url('webisoder:static/img/favicon.png')}" />
 		<script metal:define-slot="js" tal:omit-tag=""></script>
 		<link metal:define-slot="feed" tal:omit-tag="" />

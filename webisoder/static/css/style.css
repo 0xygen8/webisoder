@@ -21,8 +21,8 @@ h2.login
 	margin-bottom: 10px;
 }
 
-li.dropdown:hover > .dropdown-menu,
-a.dropdown-toggle:focus + .dropdown-menu
+.no-js li.dropdown:hover > .dropdown-menu,
+.no-js a.dropdown-toggle:focus + .dropdown-menu
 {
 	display: block;
 }
