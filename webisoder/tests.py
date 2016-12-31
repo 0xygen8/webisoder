@@ -1255,6 +1255,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			user = User(name="testuser100")
 			user.password = "secret"
 			user.mail = "init@1203"
+			user.token = "TOKEN1258"
 			DBSession.add(user)
 
 	def tearDown(self):
@@ -1284,6 +1285,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1307,6 +1309,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1329,6 +1332,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1352,6 +1356,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1374,6 +1379,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1396,6 +1402,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 			view.login_post()
 
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 		res = view.failure()
 		self.assertFalse(hasattr(res, "location"))
@@ -1420,6 +1427,8 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 
 		self.assertIn("auth.userid", request.session)
 		self.assertEqual("testuser100", request.session["auth.userid"])
+		self.assertIn("feed_token", request.session)
+		self.assertEqual("TOKEN1258", request.session.get("feed_token"))
 
 		msg = request.session.pop_flash("warning")
 		self.assertEqual(0, len(msg))
@@ -1431,6 +1440,7 @@ class TestAuthenticationAndAuthorization(WebisoderTest):
 		self.assertTrue(hasattr(res, "location"))
 		self.assertTrue(res.location.endswith("__HOME__"))
 		self.assertNotIn("auth.userid", request.session)
+		self.assertNotIn("feed_token", request.session)
 
 	def testLoginCreatesNewSession(self):
 
@@ -1942,6 +1952,7 @@ class TestProfileView(WebisoderTest):
 			user = User(name="testuser11")
 			user.password = "secret"
 			user.mail = "init2@set.up"
+			user.token = "1959TOKEN"
 			DBSession.add(user)
 
 			user = User(name="testuser12")
@@ -1951,6 +1962,7 @@ class TestProfileView(WebisoderTest):
 			user.site_news = False
 			user.days_back = 7
 			user.date_offset = 1
+			user.token = "1968TOKEN"
 			DBSession.add(user)
 
 	def tearDown(self):
@@ -2675,6 +2687,7 @@ class TestProfileView(WebisoderTest):
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
 		token = user.token
+		self.assertEqual(token, request.session.get("feed_token"))
 
 		ctl = TokenResetController(request)
 		res = ctl.post()
@@ -2682,6 +2695,7 @@ class TestProfileView(WebisoderTest):
 		self.assertTrue(res.location.endswith('__FEEDS__'))
 		user = DBSession.query(User).get('testuser12')
 		self.assertNotEqual(token, user.token)
+		self.assertEqual(user.token, request.session.get("feed_token"))
 
 
 class TestIndexPage(WebisoderTest):
@@ -2742,7 +2756,7 @@ class TestFeedsPage(WebisoderTest):
 
 		ctl = FeedsController(request)
 		res = ctl.get()
-		self.assertTrue(hasattr(res, "user"))
+		self.assertTrue("user" in res)
 
 		user = res.get("user")
 		self.assertEquals("testuser2724", user.name)

@@ -299,12 +299,16 @@ class AuthController(WebisoderController):
 		self.request.session.invalidate()
 
 		remember(self.request, name)
+		self.request.session["feed_token"] = user.token
+
 		return self.redirect("shows")
 
 	@view_config(route_name="logout", permission="view")
 	def logout(self):
 
 		forget(self.request)
+		del(self.request.session["feed_token"])
+
 		return self.redirect("home")
 
 
@@ -661,6 +665,8 @@ class TokenResetController(WebisoderController):
 		uid = self.request.authenticated_userid
 		user = DBSession.query(User).get(uid)
 		user.reset_token()
+
+		self.request.session["feed_token"] = user.token
 
 		self.flash("info", "Your feed URLs have been reset")
 		return self.redirect("feeds")
