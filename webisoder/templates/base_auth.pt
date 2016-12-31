@@ -1,6 +1,7 @@
 <html metal:use-macro="load: base.pt">
 
-<link metal:fill-slot="link" rel="alternate" title="Webisoder feed for ${request.authenticated_userid}" type="application/rss+xml" href="${request.route_url('feed', user=request.authenticated_userid, token=request.session.get('feed_token'))}" />
+<link metal:fill-slot="feed" rel="alternate" title="Webisoder feed for ${request.authenticated_userid}" type="application/atom+xml" href="${request.route_url('feed', user=request.authenticated_userid, token=request.session.get('feed_token'))}" />
+<link metal:fill-slot="calendar" rel="alternate" title="Webisoder calendar for ${request.authenticated_userid}" type="text/calendar" href="${request.route_url('ical', user=request.authenticated_userid, token=request.session.get('feed_token'))}" />
 
 <nav metal:fill-slot="nav" class="navbar navbar-default navbar-fixed-top">
 	<div class="container">

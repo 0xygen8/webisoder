@@ -11,7 +11,8 @@
 		<script type="text/javascript" src="${request.static_url('webisoder:static/js/bootstrap.min.js')}"></script>
 		<link rel="shortcut icon" href="${request.static_url('webisoder:static/img/favicon.png')}" />
 		<script metal:define-slot="js" tal:omit-tag=""></script>
-		<link metal:define-slot="link" tal:omit-tag="" />
+		<link metal:define-slot="feed" tal:omit-tag="" />
+		<link metal:define-slot="calendar" tal:omit-tag="" />
 	</head>
 	<body tal:attributes="class 'index' if request.url == request.route_url('home') else None">
 		<div class="container">
