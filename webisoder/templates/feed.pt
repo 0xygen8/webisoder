@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <tal:setHeader >
-    ${setattr(request.response,'content_type', 'application/atom+xml')}
+	${setattr(request.response,'content_type', 'application/atom+xml')}
 </tal:setHeader>
 
 <feed xmlns="http://www.w3.org/2005/Atom" tal:define="datetime import:datetime">
@@ -18,7 +18,7 @@
 		<title>${episode.airdate.strftime('%a, %b %d, %Y')}: ${episode}</title>
 		<link href="${episode.render(user.link_format)}"/>
 		<id>urn:uuid:webisoder-${episode.show.id}-${episode.season}x${"%02d" % episode.num}</id>
-		<updated>${episode.updated.strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
+		<updated>${episode.show.updated.strftime('%Y-%m-%dT%H:%M:%SZ')}</updated>
 		<summary>Episode ${"%dx%02d" % (episode.season, episode.num)} from the show "${episode.show.name}" titled "${episode.title}"</summary>
 	</entry>
 </feed>
