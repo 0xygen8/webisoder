@@ -24,6 +24,14 @@
 
 	<div class="well"><a href="${request.route_url('ical', user=user.name, token=user.token)}">${request.route_url('ical', user=user.name, token=user.token)}</a></div>
 
+	<h2>Browser bookmark</h2>
+
+	<p>If you prefer manually checking for new episodes you can bookmark the following URL:</p>
+
+	<div class="well"><a href="${request.route_url('html', user=user.name, token=user.token)}">${request.route_url('html', user=user.name, token=user.token)}</a></div>
+
+	<p>That link allows you to quickly access your list of episodes without entering your webisoder user name or password.</p>
+
 	<h2>Reset URLs</h2>
 
 	<p>If you have shared your feed URLs with somebody that you no longer wish to have access to your data, you can reset the private URLs.</p>

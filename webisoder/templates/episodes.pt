@@ -5,7 +5,10 @@
 		<h1>Your Episodes</h1>
 	</div>
 
-	<p>Your list of episodes is also available as a <a href="${request.route_url('feed', user=user.name, token=user.token)}">web feed</a> and as an <a href="${request.route_url('ical', user=user.name, token=user.token)}">iCalendar</a>.</p>
+	<div class="well" tal:condition="'token' not in request.matchdict">
+		<span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+		To quickly access your list of upcoming episodes without entering your user name and password use <a href="${request.route_url('html', user=user.name, token=user.token)}">this browser bookmark</a>.
+	</div>
 
 	<div id="all" tal:define="global prevdate 0">
 		<div tal:repeat="episode episodes" tal:omit-tag="">
