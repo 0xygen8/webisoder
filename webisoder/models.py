@@ -16,13 +16,14 @@
 
 from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
-from datetime import datetime, date
+from datetime import date
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, Numeric
-from sqlalchemy import Table, ForeignKey, Index, UniqueConstraint, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Numeric, Index, event
+from sqlalchemy import Table, ForeignKey, UniqueConstraint, Text, Date, Column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text, func
 
 from hashlib import md5
 from bcrypt import hashpw, gensalt
@@ -45,9 +46,6 @@ meta = Table("meta", Base.metadata,
 	Column("key", Text, primary_key=True),
 	Column("value", Text))
 
-# Also unused
-# news = Table("news", ...
-
 
 class ResultRating(float):
 
@@ -69,6 +67,15 @@ class ResultRating(float):
 			res = .4
 
 		return super(ResultRating, self).__new__(self, res)
+
+
+class SiteNews(Base):
+
+	__tablename__ = "news"
+	id = Column("news_id", Integer, primary_key=True)
+	date = Column(Date, nullable=False, server_default=func.now())
+	title = Column(String(50), nullable=False)
+	text = Column(Text, nullable=False)
 
 
 class Episode(Base):
@@ -141,15 +148,18 @@ class User(Base):
 	name = Column("user_name", String(30), primary_key=True)
 	passwd = Column(String(64), nullable=False)
 	mail = Column(String(50), unique=True, nullable=False)
-	signup = Column(DateTime, nullable=False, default=datetime.now)
-	verified = Column(Boolean, nullable=False, default=False)
-	token = Column(String(12))
-	days_back = Column(Numeric, nullable=False, default=7)
-	link_format = Column(Text)
-	site_news = Column(Boolean, nullable=False, default=True)
-	latest_news_read = Column(DateTime)
-	date_offset = Column(Integer)
-	last_login = Column(DateTime)
+	signup = Column(DateTime, nullable=False, server_default=func.now())
+	verified = Column(Boolean, nullable=False, default=False,
+						server_default=text("False"))
+	token = Column(String(12), nullable=False)
+	days_back = Column(Numeric, nullable=False, server_default=text("7"))
+	link_format = Column(Text, nullable=False, server_default="https://"
+		"www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##")
+	site_news = Column(Boolean, nullable=False, default=True,
+						server_default=text("True"))
+	latest_news_read = Column(Integer, ForeignKey("news.news_id"))
+	date_offset = Column(Integer, nullable=False, server_default=text("0"))
+	last_login = Column(DateTime, nullable=False, server_default=func.now())
 	recover_key = Column(String(30))
 
 	shows = relationship(Show, secondary=subscriptions, backref="users")
@@ -214,3 +224,10 @@ class User(Base):
 
 Index('user_index', User.name, unique=True)
 Index('show_id', Show.id, unique=True)
+
+@event.listens_for(User, "before_insert")
+def user_before_insert(mapper, connection, target):
+
+	if target.token is None:
+
+		target.reset_token()

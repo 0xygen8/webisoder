@@ -30,8 +30,8 @@ from tvdb_api import tvdb_shownotfound
 
 from deform.exception import ValidationFailure
 
-from .models import DBSession, Base, ResultRating, Episode, User, subscriptions
-from .models import Show
+from .models import DBSession, Base, ResultRating, SiteNews, User, subscriptions
+from .models import Episode, Show
 
 from .views import IndexController, RegistrationController, TokenResetController
 from .views import ShowsController, EpisodesController, PasswordChangeController
@@ -570,6 +570,100 @@ class WebisoderModelTests(unittest.TestCase):
 		show1 = DBSession.query(Show).get(1)
 		DBSession.delete(show1)
 		self.assertEqual(1, DBSession.query(Episode).count())
+
+
+	def testNewUserHasToken(self):
+
+		with transaction.manager:
+
+			user = User(name="user577")
+			user.password = "irrelevant"
+			user.mail = "user577@example.org"
+			DBSession.add(user)
+
+		user = DBSession.query(User).get("user577")
+		self.assertIsNotNone(user.token)
+		self.assertNotEqual(user.token, "")
+
+
+class TestNews(WebisoderTest):
+
+	def setUp(self):
+
+		super(TestNews, self).setUp()
+		MockUser.mockAuthentication()
+
+	def tearDown(self):
+
+		with transaction.manager:
+
+			DBSession.query(SiteNews).delete()
+
+		MockUser.resetAuthentication()
+		testing.tearDown()
+
+	def testSaveAndLoad(self):
+
+		msg = SiteNews()
+		msg.title = "Move along"
+		msg.text = "Nothing to see here"
+		DBSession.add(msg)
+		DBSession.flush()
+		id = msg.id
+
+		self.assertIsNotNone(id)
+		self.assertNotEqual(0, id)
+
+		msg = DBSession.query(SiteNews).get(id)
+		self.assertEqual("Move along", msg.title)
+		self.assertEqual("Nothing to see here", msg.text)
+		self.assertTrue(date.today() - msg.date <= timedelta(1))
+
+		msg2 = SiteNews()
+		msg2.title = "News item 623"
+		msg2.text = "Still nothing to see"
+		DBSession.add(msg2)
+		DBSession.flush()
+
+		self.assertIsNotNone(msg2.id)
+		self.assertNotEqual(0, msg2.id)
+		self.assertNotEqual(id, msg2.id)
+
+	def testUserNewsRelation(self):
+
+		with transaction.manager:
+
+			msg1 = SiteNews(title="634", text="634")
+			msg2 = SiteNews(title="635", text="635")
+
+			DBSession.add(msg1)
+			DBSession.add(msg2)
+			DBSession.flush()
+
+			id1 = msg1.id
+			id2 = msg2.id
+
+			user1 = User(name="637", mail="637@example.org")
+			user2 = User(name="638", mail="638@example.org")
+
+			user1.password = "irrelevant"
+			user2.password = "irrelevant"
+
+			user1.latest_news_read = msg1.id
+			user2.latest_news_read = msg2.id
+
+			DBSession.add(user1)
+			DBSession.add(user2)
+
+		self.assertNotEqual(id1, id2)
+		self.assertTrue(id1 > 0)
+		self.assertTrue(id2 > 0)
+
+		u1 = DBSession.query(User).get("637")
+		u2 = DBSession.query(User).get("638")
+
+		self.assertEqual(u1.latest_news_read, id1)
+		self.assertEqual(u2.latest_news_read, id2)
 
 
 class TestNewUserSignup(WebisoderTest):
