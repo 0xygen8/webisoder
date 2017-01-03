@@ -1,5 +1,5 @@
 # webisoder
-# Copyright (C) 2006-2016  Stefan Ott
+# Copyright (C) 2006-2017  Stefan Ott
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
