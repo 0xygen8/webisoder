@@ -9,11 +9,6 @@ th
 	white-space: nowrap;
 }
 
-#linkPreview
-{
-	display: none;
-}
-
 .login
 {
 	max-width: 400px;

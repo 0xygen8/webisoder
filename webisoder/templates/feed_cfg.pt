@@ -58,14 +58,9 @@
 		<div class="row">
 			<label class="col-sm-2 control-label" for="inputFormat">Preview</label>
 			<div class="col-sm-10">
-				<div id="linkPreview">
-					<div id="linkPreviewVal" class="well well-sm"></div>
+				<div id="linkPreview" tal:define="Show import: webisoder.models.Show; Episode import: webisoder.models.Episode">
+					<div id="linkPreviewVal" class="well well-sm" tal:define="show Show(name='Frasier'); episode Episode(show=show, season=1, num=6, title='The Crucible')">${episode.render(user.link_format)}</div>
 				</div>
-				<noscript>
-					<div class="alert alert-warning" role="alert">
-						It appears that your browser does not support JavaScript or that JavaScript has been disabled &ndash; the real-time preview will not be available.
-					</div>
-				</noscript>
 			</div>
 		</div>
 
@@ -87,10 +82,7 @@
 						<p>
 							The default value will do a simple Google search.
 						</p>
-						<p>
-							If you wish to <strong>revert to the default</strong> setting, copy the following value to the field above:<br />
-							<code>https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##</code>
-						</p>
+						<button id="revert" type="submit" name="link_format" value="https://www.google.com/search?q=##SHOW##+s##SEASON2##e##EPISODE##" class="btn btn-default">Revert to default</button>
 					</div>
 				</div>
 			</div>

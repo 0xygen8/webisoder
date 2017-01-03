@@ -29,8 +29,19 @@ function watchFormatChanges()
 	});
 }
 
+function watchRevertButton()
+{
+	$("#revert").click(function(ev)
+	{
+		return confirm("This will dicard your custom link format. Are" +
+								" you sure?");
+	});
+	console.log("#revert");
+}
+
 $(document).ready(function()
 {
 	watchFormatChanges();
 	updateLinkPreview();
+	watchRevertButton();
 });
