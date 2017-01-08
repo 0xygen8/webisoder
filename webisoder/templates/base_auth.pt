@@ -13,15 +13,8 @@
 				<span class="icon-bar"></span>
 			</button>
 			<a class="navbar-brand" href="${request.route_url('home')}"><img alt="webisoder" src="${request.static_url('webisoder:static/img/webisoder.png')}" /></a>
-			<a class="navbar-brand" href="${request.route_url('home')}"><span>webisoder</span></a>
-		</div>
-		<div id="navbar" tal:condition="request.authenticated_userid" class="navbar-collapse collapse">
-			<ul class="nav navbar-nav">
-				<li tal:attributes="class 'active' if request.url == request.route_url('shows') else None"><a href="${request.route_url('shows')}">Shows</a></li>
-				<li tal:attributes="class 'active' if request.url == request.route_url('episodes') else None"><a href="${request.route_url('episodes')}">Episodes</a></li>
-				<li tal:attributes="class 'active' if request.url == request.route_url('feeds') else None"><a href="${request.route_url('feeds')}">Feeds</a></li>
-			</ul>
-			<form class="navbar-form navbar-left" role="search" method="post" action="${request.route_url('search')}" tal:define="errors form_errors|{}">
+			<a class="navbar-brand brand-title" href="${request.route_url('home')}"><span>webisoder</span></a>
+			<form class="navbar-form pull-left" role="search" method="post" action="${request.route_url('search')}" tal:define="errors form_errors|{}">
 				<input type="hidden" name="csrf_token" value="${request.session.get_csrf_token()}" />
 				<div class="form-group">
 					<label class="sr-only" for="searchShow">Show name</label>
@@ -38,7 +31,12 @@
 					<strong>Error!</strong> ${errors.get('search')}
 				</span>
 			</form>
+		</div>
+		<div id="navbar" tal:condition="request.authenticated_userid" class="navbar-collapse collapse">
 			<ul class="nav navbar-nav navbar-right" tal:define="session request.session">
+				<li tal:attributes="class 'active' if request.url == request.route_url('shows') else None"><a href="${request.route_url('shows')}">Shows</a></li>
+				<li tal:attributes="class 'active' if request.url == request.route_url('episodes') else None"><a href="${request.route_url('episodes')}">Episodes</a></li>
+				<li tal:attributes="class 'active' if request.url == request.route_url('feeds') else None"><a href="${request.route_url('feeds')}">Feeds</a></li>
 				<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
 						<span class="glyphicon glyphicon-user"></span>
