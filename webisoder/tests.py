@@ -19,7 +19,7 @@ import transaction
 import re
 
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from pyramid import testing
 from pyramid_mailer import get_mailer
 from pyramid.authorization import ACLAuthorizationPolicy
@@ -584,6 +584,83 @@ class WebisoderModelTests(unittest.TestCase):
 		user = DBSession.query(User).get("user577")
 		self.assertIsNotNone(user.token)
 		self.assertNotEqual(user.token, "")
+
+	def testUserFailedToCompleteRegistration(self):
+
+		now = datetime.now()
+
+		with transaction.manager:
+
+			user = User(name="user593")
+			user.password = "irrelevant"
+			user.mail = "user593@example.org"
+			user.signup = now - timedelta(days=31)
+			DBSession.add(user)
+
+			user = User(name="user601")
+			user.password = "irrelevant"
+			user.mail = "user601@example.org"
+			user.signup = now - timedelta(days=31)
+			user.verified = True
+			DBSession.add(user)
+
+			user = User(name="user607")
+			user.password = "irrelevant"
+			user.mail = "user607@example.org"
+			user.signup = now - timedelta(days=29)
+			DBSession.add(user)
+
+			user = User(name="user613")
+			user.password = "irrelevant"
+			user.mail = "user613@example.org"
+			user.signup = now - timedelta(days=21)
+			user.verified = True
+			DBSession.add(user)
+
+		user = DBSession.query(User).get("user593")
+		self.assertTrue(user.failedToCompleteRegistration())
+
+		user = DBSession.query(User).get("user601")
+		self.assertFalse(user.failedToCompleteRegistration())
+
+		user = DBSession.query(User).get("user607")
+		self.assertFalse(user.failedToCompleteRegistration())
+
+		user = DBSession.query(User).get("user613")
+		self.assertFalse(user.failedToCompleteRegistration())
+
+	def testUserIsInactive(self):
+
+		now = datetime.now()
+
+		with transaction.manager:
+
+			user = User(name="user638")
+			user.password = "irrelevant"
+			user.mail = "user638@example.org"
+			user.last_login = now - timedelta(days=370)
+			DBSession.add(user)
+
+			user = User(name="user644")
+			user.password = "irrelevant"
+			user.mail = "user644@example.org"
+			user.last_login = now - timedelta(days=350)
+			DBSession.add(user)
+
+			user = User(name="user650")
+			user.password = "irrelevant"
+			user.mail = "user650@example.org"
+			user.last_login = now - timedelta(days=1)
+			DBSession.add(user)
+
+		user = DBSession.query(User).get("user638")
+		self.assertTrue(user.isInactive())
+
+		user = DBSession.query(User).get("user644")
+		self.assertFalse(user.isInactive())
+
+		user = DBSession.query(User).get("user650")
+		self.assertFalse(user.isInactive())
 
 
 class TestNews(WebisoderTest):

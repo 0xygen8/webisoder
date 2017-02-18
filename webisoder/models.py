@@ -16,7 +16,7 @@
 
 from random import SystemRandom
 from string import digits, ascii_lowercase, ascii_uppercase
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Numeric, Index, event
 from sqlalchemy import Table, ForeignKey, UniqueConstraint, Text, Date, Column
@@ -217,6 +217,19 @@ class User(Base):
 		matches = DBSession.query(Episode).filter(
 						Episode.show_id.in_(shows))
 		return [x for x in matches]
+
+	def failedToCompleteRegistration(self):
+
+		if self.verified:
+			return False
+
+		now = datetime.now()
+		return now - self.signup > timedelta(days=30)
+
+	def isInactive(self):
+
+		now = datetime.now()
+		return now - self.last_login > timedelta(days=365)
 
 	episodes = property(__get_episodes)
 	password = property(None, __set_password)
